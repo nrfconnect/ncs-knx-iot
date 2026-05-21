@@ -1,0 +1,5 @@
+.. |NCS| replace:: nRF Connect SDK
+.. |addon| replace:: KNX IoT add-on
+
+.. |VSC| replace:: Visual Studio Code
+.. |nRFVSC| replace:: nRF Connect for VS Code extension
