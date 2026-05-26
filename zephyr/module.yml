@@ -5,4 +5,3 @@ name: ncs-knx-iot
 build:
   kconfig: Kconfig
   cmake: .
-  sysbuild-cmake: sysbuild
