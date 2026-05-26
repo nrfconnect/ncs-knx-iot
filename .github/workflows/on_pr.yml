@@ -1,0 +1,44 @@
+name: Build knx-iot samples on pr
+on: 
+  pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - 'LICENSE'
+      - '.gitignore'
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  Build-samples:
+    runs-on: ubuntu-24.04
+    container: ghcr.io/nrfconnect/sdk-nrf-toolchain:v2.7.99
+    defaults:
+      run:
+        # Bash shell is needed to set toolchain related environment variables in docker container
+        # It is a workaround for GitHub Actions limitation https://github.com/actions/runner/issues/1964
+        shell: bash
+    steps: 
+    - name: Checkout repository code
+      uses: actions/checkout@1e31de5234b9f8995739874a8ce0492dc87873e2 # v4
+      with:
+        fetch-depth: 0
+        path: knx-iot
+    - name: prepare west project
+      run: |
+        rm -rf .west
+        west --version
+        west init -l knx-iot --mf west.yml &&
+        west update -n -o=--depth=1 --path-cache /workdir/
+    - name: Twister build samples
+      run: |
+        source zephyr/zephyr-env.sh
+        zephyr/scripts/twister --inline-logs --build-only -N --verbose -T knx-iot/samples --all
+    - name: Store hex files
+      uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4
+      with:
+        name: hexes
+        path: twister-out/**/*.hex
