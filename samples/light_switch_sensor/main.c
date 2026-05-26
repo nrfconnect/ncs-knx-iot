@@ -13,5 +13,7 @@ int main(void)
 {
 	LOG_INF("KNX IoT light switch sensor");
 
+	TEST;
+
 	return 0;
 }
