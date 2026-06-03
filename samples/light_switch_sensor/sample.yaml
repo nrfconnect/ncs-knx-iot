@@ -1,6 +1,6 @@
 sample:
-  name: KNX IoT Light Switch Actuator
-  description: KNX IoT light switch actuator sample
+  name: KNX IoT Light Switch Sensor
+  description: KNX IoT light switch sensor sample
 tests:
   samples.knx_iot.light_switch_sensor:
     sysbuild: true
@@ -13,5 +13,7 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
       - nrf54lm20dk/nrf54lm20b/cpuapp
+    extra_args:
+      - EXTRA_CONF_FILE=../common/thread_hardcoded.conf
     tags:
       - ci_build

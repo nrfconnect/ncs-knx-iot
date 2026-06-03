@@ -6,9 +6,20 @@ manifest:
     - name: ncs
       url-base: https://github.com/nrfconnect
 
+  defaults:
+    remote: ncs
+
   projects:
     - name: nrf
       remote: ncs
       repo-path: sdk-nrf
-      revision: v3.3.0
+      revision: v3.4.0-rc1
       import: true
+
+    - name: sdk-knx-iot-stack
+      revision: zephyr_port
+      remote: ncs
+      repo-path: sdk-knx-iot-point-api-stack
+      path: modules/lib/sdk-knx-iot-stack
+      submodules:
+        - path: deps/tinycbor
