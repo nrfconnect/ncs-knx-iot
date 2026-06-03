@@ -4,14 +4,21 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
  */
 
+#include "app.h"
+
+#include <knx/knx_app.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(light_switch_actuator, LOG_LEVEL_INF);
 
-int main(void)
-{
-	LOG_INF("KNX IoT light switch actuator");
+int main(void) {
+  LOG_INF("KNX IoT light switch actuator");
 
-	return 0;
+  app_register_device();
+
+  if (knx_app_start()) {
+    LOG_ERR("Error Initiating KNX App");
+  }
+  return 0;
 }

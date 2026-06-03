@@ -5,3 +5,4 @@
 #
 
 rsource "subsys/Kconfig"
+rsource "Kconfig.defconfig"

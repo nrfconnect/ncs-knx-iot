@@ -5,4 +5,54 @@
 #
 
 menuconfig KNX_IOT_ADD_ON
-    bool "Enable KNX IoT stack"
+	bool "Enable KNX IoT stack"
+	select KNXIOT_LIB
+	select OC_USE_KNX_PORT_LAYER_ENABLED
+	# PSA Crypto surface used by SPAKE2+ / ECDSA enrollment.
+	select REQUIRES_FULL_LIBC
+	select FPU
+	select PSA_WANT_KEY_TYPE_ECC_PUBLIC_KEY
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_IMPORT
+	select PSA_WANT_KEY_TYPE_ECC_KEY_PAIR_EXPORT
+	select PSA_WANT_ECC_SECP_R1_256
+	select PSA_WANT_ALG_ECDSA
+	select PSA_WANT_ALG_SHA_256
+	select PSA_WANT_ALG_HMAC
+	select PSA_WANT_ALG_HKDF
+	select PSA_WANT_ALG_PBKDF2_HMAC
+    # tinycbor headers pull in NETWORKING even though we don't use the IP stack as an L2.
+	imply NETWORKING
+	imply POSIX_API
+	imply CPP
+	imply FLASH
+	imply FLASH_MAP
+	imply SETTINGS
+	imply MBEDTLS
+	imply MBEDTLS_ENABLE_HEAP
+	imply MBEDTLS_PSA_CRYPTO_C
+	help
+	  Enable the KNX IoT add-on. This brings in the third-party KNX IoT
+	  stack (libknx) together with the add-on's shared KNX glue library
+	  under subsys/knx/.
+
+if KNX_IOT_ADD_ON
+
+config KNX_HARDCODED_COMMISSIONING
+	bool "Apply hardcoded KNX/Thread commissioning on boot"
+	default n
+	help
+	  When enabled, the device applies a hardcoded commissioning profile
+	  (individual address, group object/publisher/recipient tables and a
+	  shared group OSCORE key) on boot, so two boards can talk without ETS
+	  or a Thread commissioner. Gates subsys/knx/knx_presets.c.
+
+config KNX_THREAD_PRIORITY
+	int "KNX event-loop thread priority"
+	default 5
+	help
+	  Scheduling priority of the KNX worker thread that runs the stack
+	  event loop (oc_main_poll). A preemptible (positive) priority is the
+	  usual choice so networking and system work can run alongside it. The
+	  thread's stack size is taken from KNX_THREAD_STACK_SIZE.
+
+endif # KNX_IOT_ADD_ON
