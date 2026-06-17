@@ -4,4 +4,4 @@
 # SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
 #
 
-# KNX IoT stack integration (placeholder)
+add_subdirectory(knx)
