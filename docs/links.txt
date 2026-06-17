@@ -14,3 +14,7 @@
 .. _`DK Buttons and LEDs`: https://docs.nordicsemi.com/bundle/ncs-3.2.0/page/nrf/libraries/others/dk_buttons_and_leds.html
 .. _`Logging`: https://docs.nordicsemi.com/bundle/ncs-3.2.0/page/zephyr/services/logging/index.html
 .. _`Kernel API`: https://docs.nordicsemi.com/bundle/ncs-3.2.0/page/zephyr/kernel/services/index.html
+
+.. ### KNX documentation set
+
+.. _`ETS6 tool`: https://www.knx.org/knx-software
