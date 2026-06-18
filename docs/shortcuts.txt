@@ -1,5 +1,14 @@
-.. |NCS| replace:: nRF Connect SDK
-.. |addon| replace:: KNX IoT add-on
+.. ### Versions
 
-.. |VSC| replace:: Visual Studio Code
+.. |ncs_version| replace:: 3.2.0
+.. |knx-iot_version| replace:: 1.0.0
+.. |addon_version| replace:: 1.0.0
+
+.. |NCS| replace:: nRF Connect SDK
+.. |addon| replace:: KNX-IoT add-on
+
 .. |nRFVSC| replace:: nRF Connect for VS Code extension
+
+.. # Configurations
+
+.. |config| replace:: See `configure_application`_ for information about how to permanently or temporarily change the configuration.

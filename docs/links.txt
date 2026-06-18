@@ -1,0 +1,16 @@
+.. ### nRF Connect SDK documentation
+
+.. _`Installing the nRF Connect SDK`: https://docs.nordicsemi.com/bundle/ncs-|ncs_version|/page/nrf/installation/install_ncs.html
+.. _`Developing with nRF54L Series`: https://docs.nordicsemi.com/bundle/ncs-|ncs_version|/page/nrf/app_dev/device_guides/nrf54l/index.html
+
+.. ### NCS documentation set
+
+.. _`configure_application`: https://nrfconnectdocs.nordicsemi.com/ncs-|ncs_version|/nrf/app_dev/config_and_build/index.html
+
+.. ### Zephyr documentation set
+
+.. _`nrf54l15dk`: https://docs.nordicsemi.com/bundle/ncs-|ncs_version|/page/zephyr/boards/nordic/nrf54l15dk/doc/index.html
+.. _`nrf54lm20dk`: https://docs.nordicsemi.com/bundle/ncs-|ncs_version|/page/zephyr/boards/nordic/nrf54lm20dk/doc/index.html
+.. _`DK Buttons and LEDs`: https://docs.nordicsemi.com/bundle/ncs-3.2.0/page/nrf/libraries/others/dk_buttons_and_leds.html
+.. _`Logging`: https://docs.nordicsemi.com/bundle/ncs-3.2.0/page/zephyr/services/logging/index.html
+.. _`Kernel API`: https://docs.nordicsemi.com/bundle/ncs-3.2.0/page/zephyr/kernel/services/index.html
