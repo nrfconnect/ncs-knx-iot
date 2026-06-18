@@ -119,9 +119,9 @@ Dependencies
 
 This sample uses the KNX IoT stack provided by the |addon|, together with the following |NCS| components:
 
-* :ref:`dk_buttons_and_leds_readme`
+* `DK Buttons and LEDs`_
 
 It also uses the following Zephyr libraries:
 
-* :ref:`zephyr:logging_api`
-* :ref:`zephyr:kernel_api`
+* `Logging`_
+* `Kernel API`_
