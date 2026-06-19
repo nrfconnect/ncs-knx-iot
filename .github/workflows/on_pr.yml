@@ -6,6 +6,11 @@ on:
       - 'README.md'
       - 'LICENSE'
       - '.gitignore'
+      - 'docs/**'
+      - '.github/workflows/doc*.yml'
+      - '.github/actions/**'
+      - 'samples/**/*.rst'
+      - 'CODEOWNERS'
     branches:
       - main
 

@@ -73,9 +73,16 @@ runs:
           echo "| ---- | ------- |" >> comment.md
           while IFS= read -r file; do
             if [ -n "$file" ] && [ "$file" != "null" ]; then
-              html_path=$(echo "$file" | sed 's|^docs/||' | sed 's|\.rst$|.html|' | sed 's|\.md$|.html|')
-              if [[ "$html_path" == */index.html ]]; then
-                html_path="${html_path}"
+              html_path=""
+              if [[ "$file" =~ ^samples/(.+)/README\.rst$ ]]; then
+                sample_path="${BASH_REMATCH[1]}"
+                wrapper=$(find docs -path "*/samples/${sample_path}/README.rst" -print -quit 2>/dev/null)
+                if [ -n "$wrapper" ]; then
+                  html_path=$(echo "$wrapper" | sed 's|^docs/||' | sed 's|\.rst$|.html|')
+                fi
+              fi
+              if [ -z "$html_path" ]; then
+                html_path=$(echo "$file" | sed 's|^docs/||' | sed 's|\.rst$|.html|' | sed 's|\.md$|.html|')
               fi
               echo "| \`$file\` | [View]($preview_url/$html_path) |" >> comment.md
             fi
