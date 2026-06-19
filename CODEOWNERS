@@ -1,1 +1,3 @@
 * @nrfconnect/ncs-matter
+*.rst @b-gent
+*.txt @b-gent
