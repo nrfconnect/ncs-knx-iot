@@ -3,7 +3,7 @@
 KNX-IoT samples
 ###############
 
-The |NCS| provides several samples showcasing the KNX-IoT protocol.
+The |addon| for the |NCS| provides several samples showcasing the KNX-IoT protocol.
 You can build the samples for a variety of board targets and configure them for different usage scenarios.
 
 .. toctree::

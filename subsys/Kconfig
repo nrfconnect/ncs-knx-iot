@@ -32,7 +32,7 @@ menuconfig KNX_IOT_ADD_ON
 	imply MBEDTLS_PSA_CRYPTO_C
 	help
 	  Enable the KNX IoT add-on. This brings in the third-party KNX IoT
-	  stack (libknx) together with the add-on's shared KNX glue library
+	  stack (libknx) together with the add-on's shared KNX integration library
 	  under subsys/knx/.
 
 if KNX_IOT_ADD_ON

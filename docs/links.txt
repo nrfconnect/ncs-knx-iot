@@ -15,6 +15,42 @@
 .. _`Logging`: https://docs.nordicsemi.com/bundle/ncs-3.2.0/page/zephyr/services/logging/index.html
 .. _`Kernel API`: https://docs.nordicsemi.com/bundle/ncs-3.2.0/page/zephyr/kernel/services/index.html
 
+.. ### Thread and OpenThread documentation
+
+.. _`OpenThread overview`: https://docs.nordicsemi.com/bundle/ncs-|ncs_version|/page/nrf/protocols/thread/overview/index.html
+.. _`Configuring Thread in the nRF Connect SDK`: https://docs.nordicsemi.com/bundle/ncs-|ncs_version|/page/nrf/protocols/thread/configuring.html
+.. _`OpenThread integration`: https://docs.nordicsemi.com/bundle/ncs-|ncs_version|/page/nrf/protocols/thread/overview/ot_integration.html
+.. _`OpenThread`: https://openthread.io/
+.. _`Thread Border Router`: https://openthread.io/guides/border-router
+.. _`Thread Group`: https://www.threadgroup.org/
+.. _`Zephyr CoAP`: https://docs.zephyrproject.org/latest/connectivity/networking/api/coap.html
+
 .. ### KNX documentation set
 
+.. _`KNX Association`: https://www.knx.org/
+.. _`What is KNX`: https://www.knx.org/knx-en/for-professionals/What-is-KNX/A-brief-introduction/
 .. _`ETS6 tool`: https://www.knx.org/knx-software
+.. _`KNX IoT documentation`: https://buildwithknxiot.knx.org/public-projects/knx-iot-docs/
+.. _`KNX IoT Point API Stack`: https://buildwithknxiot.knx.org/public-projects/knx-iot-docs/pointapi/introduction/
+.. _`KNX IoT device profile`: https://buildwithknxiot.knx.org/public-projects/knx-iot-docs/pointapi/stack-device-profile/
+.. _`KNX IoT device bootstrapping`: https://buildwithknxiot.knx.org/public-projects/knx-iot-docs/pointapi/stack-device-bootstrapping/
+.. _`KNX IoT device bootstrapping with TLS`: https://buildwithknxiot.knx.org/public-projects/knx-iot-docs/pointapi/stack-device-bootstrapping-tls/
+.. _`KNX IoT device access control`: https://buildwithknxiot.knx.org/public-projects/knx-iot-docs/pointapi/stack-device-access-control/
+.. _`KNX IoT function point tables`: https://buildwithknxiot.knx.org/public-projects/knx-iot-docs/pointapi/stack-device-function-point/
+.. _`KNX IoT stack features`: https://buildwithknxiot.knx.org/public-projects/knx-iot-docs/pointapi/stack-features/
+.. _`KNX IoT downloads and schemas`: https://schema.knx.org/
+.. _`KNX IoT Point API Stack repository`: https://gitlab.knx.org/public-projects/knx-iot-point-api/knx-iot-point-api-stack
+.. _`KNX IoT Point API demos`: https://gitlab.knx.org/public-projects/knx-iot-point-api/knx-iot-point-api-demos
+
+.. ### IETF standards (RFCs)
+
+.. _`RFC 7252`: https://www.rfc-editor.org/rfc/rfc7252
+.. _`RFC 7959`: https://www.rfc-editor.org/rfc/rfc7959
+.. _`RFC 6762`: https://www.rfc-editor.org/rfc/rfc6762
+.. _`RFC 6763`: https://www.rfc-editor.org/rfc/rfc6763
+.. _`RFC 8259`: https://www.rfc-editor.org/rfc/rfc8259
+.. _`RFC 8392`: https://www.rfc-editor.org/rfc/rfc8392
+.. _`RFC 8613`: https://www.rfc-editor.org/rfc/rfc8613
+.. _`RFC 8949`: https://www.rfc-editor.org/rfc/rfc8949
+.. _`RFC 9175`: https://www.rfc-editor.org/rfc/rfc9175
+.. _`RFC 9383`: https://www.rfc-editor.org/rfc/rfc9383

@@ -1,7 +1,7 @@
 .. _knx_iot_config:
 
-Shared configurations in KNX-IoT add-on
-#######################################
+Shared configurations in |addon|
+################################
 
 Configuration options
 *********************
