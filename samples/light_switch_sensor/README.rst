@@ -40,7 +40,7 @@ A bound actuator receives the s-mode message, drives its output, and announces i
 Commissioning
 =============
 
-The sample currently works only with hardcoded commissioning enabled (the :kconfig:option:`CONFIG_KNX_HARDCODED_COMMISSIONING` Kconfig option).
+The sample currently works only with hardcoded commissioning enabled (the :option:`CONFIG_KNX_HARDCODED_COMMISSIONING` Kconfig option).
 On boot, the sample applies a fixed KNX commissioning profile, which includes the individual address, the group object and publisher tables, and a shared group OSCORE (Object Security for Constrained RESTful Environments) key.
 OSCORE protects KNX IoT messages by encrypting and authenticating them at the application layer.
 In this sample, the shared group OSCORE key lets the actuator and sensor exchange protected messages without the `ETS6 tool`_ or a Thread commissioner.
@@ -68,7 +68,7 @@ Configuration
 
 The following Kconfig options are most relevant for this sample:
 
-* :kconfig:option:`CONFIG_KNX_HARDCODED_COMMISSIONING` - Applies the hardcoded commissioning profile on boot.
+* :option:`CONFIG_KNX_HARDCODED_COMMISSIONING` - Applies the hardcoded commissioning profile on boot.
 
 The Thread network configuration is provided through the :file:`samples/common/thread_hardcoded.conf` file.
 This file configures a fixed Thread dataset (network name, PAN ID, channel, and network key) so that every device built with it forms or joins the same Thread network on boot, without a Thread commissioner.

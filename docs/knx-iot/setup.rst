@@ -8,7 +8,7 @@ This page outlines the requirements that you need to meet before you start worki
 Hardware requirements
 *********************
 
-The KNX IoT add-on supports the nRF54L15 and nRF54LM20A/B SoCs.
+The |addon| supports the nRF54L15 and nRF54LM20A/B SoCs.
 
 Software requirements
 *********************
@@ -20,9 +20,9 @@ Follow the `Installing the nRF Connect SDK`_ instructions, with the following ex
 
    .. group-tab:: |nRFVSC|
 
-      In the `Get the nRF Connect SDK code <Installing the nRF Connect SDK_>`_ section, click :guilabel:`Create a new application`. 
-      Select :guilabel:`Browse nRF Connect SDK Add-on Index`, then choose :guilabel:`KNX IoT`. 
-      Select v\ |addon_version| of the |addon|. 
+      In the `Get the nRF Connect SDK code <Installing the nRF Connect SDK_>`_ section, click :guilabel:`Create a new application`.
+      Select :guilabel:`Browse nRF Connect SDK Add-on Index`, then choose :guilabel:`KNX IoT`.
+      Select v\ |addon_version| of the |addon|.
       This step also installs nRF Connect SDK v\ |ncs_version|.
 
    .. group-tab:: command line
@@ -31,9 +31,9 @@ Follow the `Installing the nRF Connect SDK`_ instructions, with the following ex
 
       **Initialize a new workspace:**
 
-      1. In the `Get the nRF Connect SDK code <Installing the nRF Connect SDK_>`_, run the following command to initialize west with |addon|, which also initializes nRF Connect SDK v\ |ncs_version|:
+      1. In the `Get the nRF Connect SDK code <Installing the nRF Connect SDK_>`_, run the following command to initialize west with the |addon|, which also initializes nRF Connect SDK v\ |ncs_version|:
 
-         a. Initialize ``ncs`` for the add-on:
+         a. Initialize ``ncs`` for the |addon|:
 
             .. code-block:: console
 
@@ -45,7 +45,7 @@ Follow the `Installing the nRF Connect SDK`_ instructions, with the following ex
 
                west update
 
-      **Include add-on in the existing nRF Connect SDK workspace:**
+      **Include the |addon| in the existing nRF Connect SDK workspace:**
 
       1. Assuming you have an existing nRF Connect SDK workspace in the :file:`ncs` folder, run the following commands:
 
@@ -55,13 +55,13 @@ Follow the `Installing the nRF Connect SDK`_ instructions, with the following ex
 
                cd ncs
 
-         #. Clone the add-on repository:
+         #. Clone the |addon| repository:
 
             .. code-block:: console
 
                git clone https://github.com/nrfconnect/ncs-knx-iot
 
-         #. Set manifest path to the add-on directory:
+         #. Set manifest path to the |addon| directory:
 
             .. code-block:: console
 
@@ -72,8 +72,8 @@ Follow the `Installing the nRF Connect SDK`_ instructions, with the following ex
             .. code-block:: console
 
                west update
-         
-      2. Optionally, run these commands in case you need to go back to work on the nRF Connect SDK without the add-on:
+
+      2. Optionally, run these commands in case you need to go back to work on the nRF Connect SDK without the |addon|:
 
          a. Configure the manifest path back to the nRF Connect SDK directory
 
@@ -86,7 +86,7 @@ Follow the `Installing the nRF Connect SDK`_ instructions, with the following ex
             .. code-block:: console
 
                west update
-         
+
          #. Check the current manifest path with the following command:
 
             .. code-block:: console
@@ -100,4 +100,3 @@ Follow the `Installing the nRF Connect SDK`_ instructions, with the following ex
                nrf
 
            This means that the current workspace is using the nRF Connect SDK.
- 
