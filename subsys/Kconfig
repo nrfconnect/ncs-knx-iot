@@ -54,4 +54,11 @@ config KNX_THREAD_PRIORITY
 	  usual choice so networking and system work can run alongside it. The
 	  thread's stack size is taken from KNX_THREAD_STACK_SIZE.
 
+config KNX_VERBOSE_STACK_LOGS
+	bool "Enable verbose libknx stack logging"
+	default n
+	help
+	  When enabled, libknx logs at DEBUG level and stack PRINT output is
+	  routed to Zephyr logging.
+
 endif # KNX_IOT_ADD_ON

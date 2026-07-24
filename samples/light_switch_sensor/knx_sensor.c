@@ -145,7 +145,7 @@ static void sensor_send_toggle(void)
 		return;
 	}
 
-	LOG_INF("button: sensor SOO -> %d, transmitting", value);
+	LOG_INF("Switch pressed: sending light %s", value ? "on" : "off");
 	knx_datapoint_transmit(TOGGLE_ID);
 }
 

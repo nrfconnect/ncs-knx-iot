@@ -91,8 +91,8 @@ static void knx_thread_entry(void *p1, void *p2, void *p3)
 
 	const oc_device_info_t *device = oc_core_get_device_info();
 
-	LOG_INF("serial number: %s", oc_string(device->serialnumber));
-	LOG_INF("host name: %s", oc_string(device->iot_hostname));
+	LOG_DBG("serial number: %s", oc_string(device->serialnumber));
+	LOG_DBG("host name: %s", oc_string(device->iot_hostname));
 
 	(void)oc_connectivity_get_endpoints();
 	knx_publish_service(oc_string(device->serialnumber), device->iid, device->ia, device->pm);

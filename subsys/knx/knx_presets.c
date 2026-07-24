@@ -138,7 +138,7 @@ int knx_apply_presets(const knx_preset_t *preset)
 		return -EINVAL;
 	}
 
-	LOG_INF("applying hardcoded KNX presets (fid=%llu iid=%llu ia=%d ga=%u)",
+	LOG_DBG("applying hardcoded KNX presets (fid=%llu iid=%llu ia=%d ga=%u)",
 		(unsigned long long)preset->fid, (unsigned long long)preset->iid, preset->ia,
 		preset->ga);
 

@@ -17,4 +17,13 @@ config KNXIOT_SPAKE2P_MBEDTLS
 config KNXIOT_LIB_DEMO_APPS
 	default n
 
+# Silence libknx logs
+config LIB_KNX_LOG_LEVEL
+	default 4 if KNX_VERBOSE_STACK_LOGS
+	default 0
+
+config OC_PRINT_ENABLED
+	default y if KNX_VERBOSE_STACK_LOGS
+	default n
+
 endif # KNX_IOT_ADD_ON

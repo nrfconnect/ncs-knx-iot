@@ -140,6 +140,7 @@ static void actuator_on_write(const knx_datapoint_t *dp)
 		}
 
 		actuator_set_light(value);
+		LOG_INF("Light turned %s", value ? "on" : "off");
 	}
 }
 

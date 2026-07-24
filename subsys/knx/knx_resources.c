@@ -371,7 +371,7 @@ void knx_put_dp(oc_request_t *request, oc_interface_mask_t interfaces, void *use
 			error_state = false;
 			switch (value.kind) {
 			case KNX_DPT_BOOL:
-				LOG_INF("set %s to %d", oc_string(request->resource->uri),
+				LOG_DBG("set %s to %d", oc_string(request->resource->uri),
 					value.data.boolean);
 				break;
 			default:
