@@ -56,7 +56,8 @@ User interface
 
 LED 1:
    Indicates the network and KNX service status.
-   The LED turns on when the Thread network is up and the KNX service has been published.
+   The LED blinks while the device is waiting to attach to the Thread network.
+   The LED turns on steadily when the Thread network is up and the KNX service has been published.
 
 Button 2:
    Toggles the switch on/off (``soo``) datapoint of the first channel and transmits it to the bound group.
@@ -79,23 +80,38 @@ Building and running
 
 Before you start, make sure you have set up the |addon| as described in the :ref:`knx_iot_setup` page.
 
-To build the sample from the command line, run the following command from the sample directory, with *board_target* replaced by one of the supported board targets:
+This sample requires the Thread hardcoded configuration from :file:`samples/common/thread_hardcoded.conf`.
+You can build using either the |nRFVSC| or the command line.
 
-.. code-block:: console
+.. tabs::
 
-   west build -b board_target -- -DEXTRA_CONF_FILE=../common/thread_hardcoded.conf
+   .. group-tab:: nRF Connect for VS Code
 
-For example, to build for the nRF54L15 DK, run the following command:
+      1. Open the sample folder in VS Code with the nRF Connect extension installed.
+      2. In the extension's build configuration, add :file:`../common/thread_hardcoded.conf` to **Extra Kconfig fragments**.
+      3. Select a supported board target and build or flash the sample.
 
-.. code-block:: console
+   .. group-tab:: Command line
 
-   west build -b nrf54l15dk/nrf54l15/cpuapp -- -DEXTRA_CONF_FILE=../common/thread_hardcoded.conf
+      To build the sample from the command line, run the following command from the sample directory, with *board_target* replaced by one of the supported board targets:
 
-After building, program the sample to the development kit:
+      .. code-block:: console
 
-.. code-block:: console
+         west build -b board_target -- -DEXTRA_CONF_FILE=../common/thread_hardcoded.conf
 
-   west flash --erase
+      For example, to build for the nRF54L15 DK, run the following command:
+
+      .. code-block:: console
+
+         west build -b nrf54l15dk/nrf54l15/cpuapp -- -DEXTRA_CONF_FILE=../common/thread_hardcoded.conf
+
+      After building, program the sample to the development kit:
+
+      .. code-block:: console
+
+         west flash --erase
+
+To enable verbose KNX stack logging for debugging, add :file:`../common/verbose_logging.conf` as an additional Kconfig fragment.
 
 Testing
 *******
