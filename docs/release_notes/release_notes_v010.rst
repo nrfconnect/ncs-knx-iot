@@ -1,4 +1,4 @@
-.. _release_notes_vTBA:
+.. _release_notes_v010:
 
 Release notes for |addon| v0.1.0
 ################################
