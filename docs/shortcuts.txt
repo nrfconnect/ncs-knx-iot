@@ -9,6 +9,8 @@
 
 .. |nRFVSC| replace:: nRF Connect for VS Code extension
 
+.. |no_changes_yet_note| replace:: No changes since the latest |addon| release.
+
 .. # Configurations
 
 .. |config| replace:: See `Configuring and building`_ for information about how to permanently or temporarily change the configuration.

@@ -13,8 +13,8 @@ from pathlib import Path
 project = 'KNX IoT Add-on for the nRF Connect SDK'
 copyright = '2026, Nordic Semiconductor'
 author = 'Nordic Semiconductor'
-release = '0.1.0'
-version = '0.1.0'
+release = '0.1.99'
+version = '0.1.99'
 
 # Paths
 

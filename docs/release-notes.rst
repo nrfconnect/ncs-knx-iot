@@ -24,4 +24,5 @@ The following table contains a full list of |addon| releases and related |NCS| a
    :caption: Contents
    :glob:
 
+   release_notes/release_notes_changelog.rst
    release_notes/release_notes_v010.rst
