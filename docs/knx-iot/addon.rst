@@ -10,8 +10,8 @@
 This page describes what the |addon| provides and how it integrates the KNX IoT Point API stack into the |NCS|.
 For the protocol concepts referenced here, see the :ref:`knx_iot_overview`.
 
-What the |addon| provides
-*************************
+Add-on components
+*****************
 
 The |addon| brings the KNX IoT Point API to Nordic Semiconductor devices running the |NCS|.
 It consists of the following parts:

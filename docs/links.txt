@@ -6,7 +6,7 @@
 
 .. ### NCS documentation set
 
-.. _`configure_application`: https://nrfconnectdocs.nordicsemi.com/ncs-|ncs_version|/nrf/app_dev/config_and_build/index.html
+.. _`Configuring and building`: https://nrfconnectdocs.nordicsemi.com/ncs/|ncs_version|/nrf/app_dev/config_and_build/index.html
 
 .. ### Zephyr documentation set
 

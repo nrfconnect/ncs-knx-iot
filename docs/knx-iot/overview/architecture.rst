@@ -1,7 +1,7 @@
 .. _knx_iot_architecture:
 
-KNX IoT architecture
-####################
+KNX IoT protocol stack architecture
+###################################
 
 .. contents::
    :local:

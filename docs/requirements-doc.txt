@@ -13,4 +13,3 @@ python-dotenv>=1.0.0
 pykwalify>=1.8.0
 kconfiglib>=14.1.0
 breathe>=4.30.0
-

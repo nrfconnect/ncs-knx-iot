@@ -18,8 +18,8 @@ For architecture and integration details, see :ref:`knx_iot_addon`.
 
    knx-iot/overview/index
    knx-iot/addon
-   knx-iot/samples
    setup
+   knx-iot/samples
    config
    software_maturity
    known_issues

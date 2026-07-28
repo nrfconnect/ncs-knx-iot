@@ -22,7 +22,7 @@ A known issue can list one or both of the following entries:
   Sometimes, they are discovered later and added over time.
 
 .. version-filter::
-   :default: v1-0-0
+   :default: v0-1-0
    :container: dl/dt
    :tags: [("wontfix", "Won't fix")]
 
@@ -31,15 +31,17 @@ A known issue can list one or both of the following entries:
 
    wontfix Won't fix
 
-List of known issues for v0.1.0 release
-***************************************
+List of known issues for the v0.1.0 release
+*******************************************
 
 The following release is `experimental <Software maturity levels_>`_.
 Because of this, not all behavior is fully defined or validated.
 
 .. _knx_iot_known_issue_actuator_state_not_persisted:
 
-KRKNWK-22216: The actuator light state is not persisted after reboot
+.. rst-class:: v0-1-0
+
+KRKNWK-22216: The actuator light state does not persist after reboot
   The light switch actuator sample does not store the switched load state in non-volatile memory.
   After a reboot, **LED 2** is always off, even if the light was on before the reset.
 

@@ -29,7 +29,7 @@ Follow the `Installing the nRF Connect SDK`_ instructions, with the following ex
 
    .. group-tab:: Command line
 
-      You can initialize workspace in two alternative ways:
+      You can initialize the workspace in two alternative ways:
 
       **Initialize a new workspace:**
 
@@ -39,7 +39,7 @@ Follow the `Installing the nRF Connect SDK`_ instructions, with the following ex
 
             .. code-block:: console
 
-               west init -m "http://github.com/nrfconnect/ncs-knx-iot"
+               west init -m "https://github.com/nrfconnect/ncs-knx-iot"
 
          #. Update the nRF Connect SDK modules:
 
@@ -75,7 +75,7 @@ Follow the `Installing the nRF Connect SDK`_ instructions, with the following ex
 
                west update
 
-      2. Optionally, run these commands in case you need to go back to work on the nRF Connect SDK without the |addon|:
+      2. If you ever need to go back to using the nRF Connect SDK without the |addon|, run these commands:
 
          a. Configure the manifest path back to the nRF Connect SDK directory.
 
