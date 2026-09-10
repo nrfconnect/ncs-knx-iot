@@ -1,3 +1,5 @@
 * @nrfconnect/ncs-matter
 *.rst @b-gent @annwoj
 *.txt @b-gent @annwoj
+
+CMakeLists.txt @nrfconnect/ncs-matter
