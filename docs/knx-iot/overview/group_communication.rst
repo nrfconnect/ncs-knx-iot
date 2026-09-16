@@ -58,8 +58,8 @@ At runtime, a device sends a group notification by POSTing to the ``/k`` resourc
 Subscribers can also use CoAP *Observe* on ``/k`` to receive notifications.
 
 .. note::
-   In the :ref:`knx_iot_samples`, both devices share a single group address and a single group OSCORE key applied through hardcoded commissioning, so they exchange S-Mode messages directly without a commissioning tool.
-   See :ref:`knx_iot_commissioning` and the :ref:`knx_iot_samples`.
+   After commissioning, the :ref:`knx_iot_samples` use group addresses and OSCORE keys configured by ETS.
+   See :ref:`knx_iot_commissioning` for more information.
 
 Read, write, and subscribe
 **************************

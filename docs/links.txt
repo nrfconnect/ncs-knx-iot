@@ -30,7 +30,7 @@
 
 .. _`KNX Association`: https://www.knx.org/
 .. _`What is KNX`: https://www.knx.org/knx-en/for-professionals/What-is-KNX/A-brief-introduction/
-.. _`ETS6 tool`: https://www.knx.org/knx-software
+.. _`ETS tool`: https://www.knx.org/knx-software
 .. _`KNX IoT documentation`: https://buildwithknxiot.knx.org/public-projects/knx-iot-docs/
 .. _`KNX IoT Point API Stack`: https://buildwithknxiot.knx.org/public-projects/knx-iot-docs/pointapi/introduction/
 .. _`KNX IoT device profile`: https://buildwithknxiot.knx.org/public-projects/knx-iot-docs/pointapi/stack-device-profile/
@@ -42,6 +42,7 @@
 .. _`KNX IoT downloads and schemas`: https://schema.knx.org/
 .. _`KNX IoT Point API Stack repository`: https://gitlab.knx.org/public-projects/knx-iot-point-api/knx-iot-point-api-stack
 .. _`KNX IoT Point API demos`: https://gitlab.knx.org/public-projects/knx-iot-point-api/knx-iot-point-api-demos
+.. _`KNX IoT virtual LSxB product entry`: https://gitlab.knx.org/public-projects/knx-iot-point-api/knx-iot-point-api-demos/-/blob/v1.1.0/apps/knx/ets/knx_iot_virtual_lsxb.knxprod?ref_type=tags
 
 .. ### IETF standards (RFCs)
 

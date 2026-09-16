@@ -8,6 +8,7 @@ In combination with the |NCS|, the |addon| allows for development of KNX IoT app
 
 If you are new to KNX or KNX IoT, start with the :ref:`knx_iot_overview` for an introduction to the protocol and its infrastructure.
 For architecture and integration details, see :ref:`knx_iot_addon`.
+To set up and commission the samples with ETS, follow the :ref:`knx_iot_quickstart`.
 
 .. note::
    The |addon| is provided as an `experimental feature <Software maturity levels_>`_.
@@ -19,6 +20,7 @@ For architecture and integration details, see :ref:`knx_iot_addon`.
    knx-iot/overview/index
    knx-iot/addon
    setup
+   quick-start
    migration
    knx-iot/samples
    config
