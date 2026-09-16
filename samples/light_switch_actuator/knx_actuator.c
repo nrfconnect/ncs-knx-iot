@@ -22,6 +22,7 @@
 #endif
 
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 #include "oc_knx_fp.h"
 
@@ -54,6 +55,24 @@ static const knx_identity_t actuator_identity = {
 	.mid = 0x00fa,
 };
 
+/* Application parameter required by the KNX virtual LSxB reference ETS product. */
+static knx_datapoint_t actuator_parameters[] = {
+	{
+		.path = "/p/globalTestParameter",
+		.dpa = "urn:knx:dpa.65500.201",
+		.dpt = ":dpt.value2Ucount",
+		.id = KNX_PARAMETER_ID(0),
+		.methods = KNX_DP_GET | KNX_DP_PUT,
+		.properties = OC_DISCOVERABLE | OC_OBSERVABLE | OC_WRITE_AFFECTS_FP,
+		.get_acl = OC_ACL_D,
+		.get_iface = OC_IF_D,
+		.put_acl = OC_ACL_P,
+		.put_iface = OC_IF_P,
+		.mirror_to = KNX_DP_NONE,
+		.value = {.kind = KNX_DPT_VALUE_2_UCOUNT},
+	},
+};
+
 /* LSAB: soo is the control input (GET + PUT, if.i) and mirrors onto ioo, the
  * status output (GET, if.o). During typical operation, the actuator listens for
  * s-mode multicasts on its SOO from devices bound to the same GA. When this
@@ -66,8 +85,11 @@ static knx_datapoint_t actuator_datapoints[] = {
 	 .dpt = ":dpt.switch",
 	 .id = KNX_DP_ID(0, SOO),
 	 .methods = KNX_DP_GET | KNX_DP_PUT,
-	 .acl = OC_ACL_I,
-	 .iface = OC_IF_I,
+	 .properties = OC_DISCOVERABLE | OC_OBSERVABLE,
+	 .get_acl = OC_ACL_I,
+	 .get_iface = OC_IF_I,
+	 .put_acl = OC_ACL_I,
+	 .put_iface = OC_IF_I,
 	 .mirror_to = KNX_DP_ID(0, IOO),
 	 .value = {.kind = KNX_DPT_BOOL}},
 	{.path = "/p/lsab/0/ioo",
@@ -75,8 +97,9 @@ static knx_datapoint_t actuator_datapoints[] = {
 	 .dpt = ":dpt.switch",
 	 .id = KNX_DP_ID(0, IOO),
 	 .methods = KNX_DP_GET,
-	 .acl = OC_ACL_O,
-	 .iface = OC_IF_O,
+	 .properties = OC_DISCOVERABLE | OC_OBSERVABLE,
+	 .get_acl = OC_ACL_O,
+	 .get_iface = OC_IF_O,
 	 .mirror_to = KNX_DP_NONE,
 	 .value = {.kind = KNX_DPT_BOOL}},
 	{.path = "/p/lsab/1/soo",
@@ -84,8 +107,11 @@ static knx_datapoint_t actuator_datapoints[] = {
 	 .dpt = ":dpt.switch",
 	 .id = KNX_DP_ID(1, SOO),
 	 .methods = KNX_DP_GET | KNX_DP_PUT,
-	 .acl = OC_ACL_I,
-	 .iface = OC_IF_I,
+	 .properties = OC_DISCOVERABLE | OC_OBSERVABLE,
+	 .get_acl = OC_ACL_I,
+	 .get_iface = OC_IF_I,
+	 .put_acl = OC_ACL_I,
+	 .put_iface = OC_IF_I,
 	 .mirror_to = KNX_DP_ID(1, IOO),
 	 .value = {.kind = KNX_DPT_BOOL}},
 	{.path = "/p/lsab/1/ioo",
@@ -93,8 +119,9 @@ static knx_datapoint_t actuator_datapoints[] = {
 	 .dpt = ":dpt.switch",
 	 .id = KNX_DP_ID(1, IOO),
 	 .methods = KNX_DP_GET,
-	 .acl = OC_ACL_O,
-	 .iface = OC_IF_O,
+	 .properties = OC_DISCOVERABLE | OC_OBSERVABLE,
+	 .get_acl = OC_ACL_O,
+	 .get_iface = OC_IF_O,
 	 .mirror_to = KNX_DP_NONE,
 	 .value = {.kind = KNX_DPT_BOOL}},
 };
@@ -133,7 +160,7 @@ static void actuator_on_write(const knx_datapoint_t *dp)
 {
 	bool value;
 
-	if (KNX_DP_POINT(dp->id) == SOO) {
+	if (!KNX_DP_IS_PARAMETER(dp->id) && KNX_DP_POINT(dp->id) == SOO) {
 		if (knx_datapoint_get_bool(dp->id, &value) < 0) {
 			LOG_ERR("failed to read written actuator SOO");
 			return;
@@ -157,6 +184,8 @@ static void actuator_on_init(void)
 
 static const knx_device_t actuator_device = {
 	.identity = &actuator_identity,
+	.parameters = actuator_parameters,
+	.num_parameters = ARRAY_SIZE(actuator_parameters),
 	.functional_blocks = actuator_blocks,
 	.num_functional_blocks = NUM_CHANNELS,
 	.on_init = actuator_on_init,

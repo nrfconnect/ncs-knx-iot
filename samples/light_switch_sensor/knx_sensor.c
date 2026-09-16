@@ -52,6 +52,24 @@ static const knx_identity_t sensor_identity = {
 	.mid = 0x00fa,
 };
 
+/* Application parameter required by the KNX virtual LSxB reference ETS product. */
+static knx_datapoint_t sensor_parameters[] = {
+	{
+		.path = "/p/globalTestParameter",
+		.dpa = "urn:knx:dpa.65500.201",
+		.dpt = ":dpt.value2Ucount",
+		.id = KNX_PARAMETER_ID(0),
+		.methods = KNX_DP_GET | KNX_DP_PUT,
+		.properties = OC_DISCOVERABLE | OC_OBSERVABLE | OC_WRITE_AFFECTS_FP,
+		.get_acl = OC_ACL_D,
+		.get_iface = OC_IF_D,
+		.put_acl = OC_ACL_P,
+		.put_iface = OC_IF_P,
+		.mirror_to = KNX_DP_NONE,
+		.value = {.kind = KNX_DPT_VALUE_2_UCOUNT},
+	},
+};
+
 /* LSSB: soo is the control output (GET, if.o); ioo is the status input
  * (GET + PUT, if.i). No mirroring. During typical operation, this would behave
  * something like this: The button is pressed this device's SOO is toggled,
@@ -66,8 +84,9 @@ static knx_datapoint_t sensor_datapoints[] = {
 	 .dpt = ":dpt.switch",
 	 .id = KNX_DP_ID(0, SOO),
 	 .methods = KNX_DP_GET,
-	 .acl = OC_ACL_O,
-	 .iface = OC_IF_O,
+	 .properties = OC_DISCOVERABLE | OC_OBSERVABLE,
+	 .get_acl = OC_ACL_O,
+	 .get_iface = OC_IF_O,
 	 .mirror_to = KNX_DP_NONE,
 	 .value = {.kind = KNX_DPT_BOOL}},
 	{.path = "/p/lssb/0/ioo",
@@ -75,8 +94,11 @@ static knx_datapoint_t sensor_datapoints[] = {
 	 .dpt = ":dpt.switch",
 	 .id = KNX_DP_ID(0, IOO),
 	 .methods = KNX_DP_GET | KNX_DP_PUT,
-	 .acl = OC_ACL_I,
-	 .iface = OC_IF_I,
+	 .properties = OC_DISCOVERABLE | OC_OBSERVABLE,
+	 .get_acl = OC_ACL_I,
+	 .get_iface = OC_IF_I,
+	 .put_acl = OC_ACL_I,
+	 .put_iface = OC_IF_I,
 	 .mirror_to = KNX_DP_NONE,
 	 .value = {.kind = KNX_DPT_BOOL}},
 	{.path = "/p/lssb/1/soo",
@@ -84,8 +106,9 @@ static knx_datapoint_t sensor_datapoints[] = {
 	 .dpt = ":dpt.switch",
 	 .id = KNX_DP_ID(1, SOO),
 	 .methods = KNX_DP_GET,
-	 .acl = OC_ACL_O,
-	 .iface = OC_IF_O,
+	 .properties = OC_DISCOVERABLE | OC_OBSERVABLE,
+	 .get_acl = OC_ACL_O,
+	 .get_iface = OC_IF_O,
 	 .mirror_to = KNX_DP_NONE,
 	 .value = {.kind = KNX_DPT_BOOL}},
 	{.path = "/p/lssb/1/ioo",
@@ -93,8 +116,11 @@ static knx_datapoint_t sensor_datapoints[] = {
 	 .dpt = ":dpt.switch",
 	 .id = KNX_DP_ID(1, IOO),
 	 .methods = KNX_DP_GET | KNX_DP_PUT,
-	 .acl = OC_ACL_I,
-	 .iface = OC_IF_I,
+	 .properties = OC_DISCOVERABLE | OC_OBSERVABLE,
+	 .get_acl = OC_ACL_I,
+	 .get_iface = OC_IF_I,
+	 .put_acl = OC_ACL_I,
+	 .put_iface = OC_IF_I,
 	 .mirror_to = KNX_DP_NONE,
 	 .value = {.kind = KNX_DPT_BOOL}},
 };
@@ -162,6 +188,8 @@ static void sensor_on_init(void)
 
 static const knx_device_t sensor_device = {
 	.identity = &sensor_identity,
+	.parameters = sensor_parameters,
+	.num_parameters = ARRAY_SIZE(sensor_parameters),
 	.functional_blocks = sensor_blocks,
 	.num_functional_blocks = NUM_CHANNELS,
 	.on_init = sensor_on_init,

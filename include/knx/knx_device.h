@@ -10,8 +10,8 @@
  * This file defines the common device model used by both the application stack,
  * as well as by the sample-level logic.
  * The structure is the following:
- * The knx_device_t is the top level, it houses the identity of the device, the
- * functional block, callbacks and optional presets.
+ * The knx_device_t is the top level, it houses the identity of the device,
+ * application parameters, functional blocks, callbacks and optional presets.
  *
  * Functional blocks are standard defined, for example FB number 417 is LSAB
  * (Light Switch Actuator Basic) (Kind of like a Matter Cluster) They consist of
@@ -34,10 +34,13 @@ extern "C" {
 
 /* A datapoint id packs the functional-block channel and the point index into a
  * stable handle used for mirror targets and the by-id accessors below.
+ * Channel UINT8_MAX is reserved for application parameters.
  */
 #define KNX_DP_ID(channel, point) ((uint16_t)(((channel) << 8) | ((point) & 0xFF)))
 #define KNX_DP_CHANNEL(id)	  ((uint8_t)(((id) >> 8) & 0xFF))
 #define KNX_DP_POINT(id)	  ((uint8_t)((id) & 0xFF))
+#define KNX_PARAMETER_ID(index)	  KNX_DP_ID(UINT8_MAX, index)
+#define KNX_DP_IS_PARAMETER(id)	  (KNX_DP_CHANNEL(id) == UINT8_MAX)
 
 /* Sentinel for knx_datapoint_t.mirror_to (no mirroring). */
 #define KNX_DP_NONE (-1)
@@ -46,15 +49,17 @@ extern "C" {
 #define KNX_DP_GET (1U << 0)
 #define KNX_DP_PUT (1U << 1)
 
-/* The light switch sample currently only requires boolean data; the code is prepared for easy
- * extension to other types in the future.
+/* Supported datapoint value types. Add new types here and to the GET, PUT, and
+ * reset paths in knx_resources.c.
  */
 typedef enum {
-	KNX_DPT_BOOL = 0,
+	KNX_DPT_BOOL = 0,	    /* :dpt.switch and other 1-bit booleans */
+	KNX_DPT_VALUE_2_UCOUNT, /* :dpt.value2Ucount, 2-octet unsigned count */
 } knx_dpt_kind_t;
 
 typedef union {
 	bool boolean;
+	uint16_t value_2_ucount;
 } knx_datapoint_data_t;
 
 typedef struct {
@@ -68,13 +73,15 @@ typedef struct {
 		       standard)*/
 	char *dpt;  /* datapoint type, e.g. ":dpt.switch" (from the standard)*/
 
-	uint16_t id; /* KNX_DP_ID(channel, point), unique within the device */
+	uint16_t id; /* KNX_DP_ID or KNX_PARAMETER_ID, unique within the device */
 
-	uint8_t methods;	   /* KNX_DP_GET and/or KNX_DP_PUT */
-	oc_acl_mask_t acl;	   /* access scope for the handler(s) */
-	oc_interface_mask_t iface; /* interface for the handler(s) */
-	int32_t mirror_to;	   /* datapoint id mirrored + announced on write, or
-				      KNX_DP_NONE */
+	uint8_t methods;		     /* KNX_DP_GET and/or KNX_DP_PUT */
+	oc_resource_properties_t properties; /* OC_DISCOVERABLE, OC_OBSERVABLE, etc. */
+	oc_acl_mask_t get_acl;		     /* GET access scope */
+	oc_interface_mask_t get_iface;	     /* GET interface */
+	oc_acl_mask_t put_acl;		     /* PUT access scope */
+	oc_interface_mask_t put_iface;	     /* PUT interface */
+	int32_t mirror_to; /* datapoint id mirrored + announced on write, or KNX_DP_NONE */
 
 	knx_datapoint_value_t value; /* current value, with its datapoint type */
 } knx_datapoint_t;
@@ -105,6 +112,10 @@ struct knx_preset; /* defined in knx_presets.h */
 
 typedef struct {
 	const knx_identity_t *identity;
+
+	knx_datapoint_t *parameters;
+	size_t num_parameters;
+
 	const knx_functional_block_t *functional_blocks;
 	size_t num_functional_blocks;
 
@@ -147,6 +158,12 @@ int knx_datapoint_get_bool(uint16_t id, bool *value);
 
 /** @brief Set a boolean datapoint value. */
 int knx_datapoint_set_bool(uint16_t id, bool value);
+
+/** @brief Read a value2Ucount (2-octet unsigned) datapoint value. */
+int knx_datapoint_get_u16(uint16_t id, uint16_t *value);
+
+/** @brief Set a value2Ucount (2-octet unsigned) datapoint value. */
+int knx_datapoint_set_u16(uint16_t id, uint16_t value);
 
 /**
  * @brief Announce a datapoint value as an s-mode multicast write.
