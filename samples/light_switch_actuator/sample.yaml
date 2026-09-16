@@ -17,4 +17,7 @@ tests:
       - EXTRA_CONF_FILE=../common/thread_hardcoded.conf
     tags:
       - ci_build
-
+  samples.knx_iot.light_switch_actuator.release:
+    extra_args:
+      - EXTRA_CONF_FILE=release.conf
+      - FILE_SUFFIX=release

@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+/* The release image uses internal RRAM for firmware and persistent settings. */
+&spi00 {
+	status = "disabled";
+};
+
+/* The release configuration has no console, shell, or serial transport. */
+&uart20 {
+	status = "disabled";
+};
