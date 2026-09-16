@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+/*
+ * Verbose KNX stack logs overflow the console at the default 115200 baud,
+ * so the console UART runs at 1000000 baud to avoid dropping them.
+ */
+
+&uart20 {
+	current-speed = <1000000>;
+};

@@ -5,3 +5,5 @@ name: ncs-knx-iot
 build:
   kconfig: Kconfig
   cmake: .
+  settings:
+    snippet_root: .
