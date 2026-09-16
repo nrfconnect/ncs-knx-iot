@@ -34,5 +34,5 @@ zephyr_library_sources_ifdef(CONFIG_DK_LIBRARY knx_leds.c)
 zephyr_library_sources_ifdef(CONFIG_DK_LIBRARY knx_buttons.c)
 zephyr_library_sources_ifdef(CONFIG_DK_LIBRARY knx_board.c)
 
-# Hardcoded "automatic" commissioning mechanism (parameterised by the device).
+# Hardcoded KNX commissioning for development.
 zephyr_library_sources_ifdef(CONFIG_KNX_HARDCODED_COMMISSIONING knx_presets.c)
