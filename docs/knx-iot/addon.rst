@@ -44,17 +44,26 @@ Its main source files are:
 * :file:`knx_app.c`, :file:`knx_stack.c` - Initialize and run the KNX IoT stack, including the event loop.
 * :file:`knx_resources.c` - Register the application's KNX resources (functional blocks and datapoints).
 * :file:`knx_transport.c` - Adapt the stack to the underlying IPv6/Thread transport.
-* :file:`knx_board.c` - Shared board support (status LED, button dispatch), built when :kconfig:option:`CONFIG_DK_LIBRARY` is enabled.
+* :file:`knx_board.c`, :file:`knx_buttons.c`, :file:`knx_leds.c` - Shared board support (status LEDs, button handling), built when :kconfig:option:`CONFIG_DK_LIBRARY` is enabled.
 * :file:`knx_presets.c` - The hardcoded commissioning mechanism, built when :option:`CONFIG_KNX_HARDCODED_COMMISSIONING` is enabled (see :ref:`knx_iot_commissioning`).
 
 The stack runs its event loop on a dedicated worker thread whose scheduling priority is set with the :option:`CONFIG_KNX_THREAD_PRIORITY` Kconfig option.
 
+SPAKE2+ credentials
+===================
+
+During the build, the |addon| generates a SPAKE2+ verifier from :option:`CONFIG_KNX_IOT_PASSWORD` and compiles it into the application.
+The stack uses the verifier for PASE authentication, while the samples retain the password to print their onboarding QR code on demand.
+
+The default password and salt are intended for demonstration only.
+Production applications must use device-specific credentials and a suitable provisioning process.
+For more information about SPAKE2+, see :ref:`knx_iot_security`.
 
 Relationship to the upstream stack
 **********************************
 
-The KNX IoT functionality itself comes from the upstream Point API stack, and it is integrated by the |addon|.
-The |addon| disables the stack's bundled demo applications and replaces them with its own device-agnostic application layer in :file:`subsys/knx/`.
+The KNX IoT functionality comes from the upstream Point API stack.
+The |addon| provides the |NCS| integration and a device-agnostic application layer under :file:`subsys/knx/`.
 For upstream documentation, the protocol specifications, and schemas, see the `KNX IoT documentation`_ and `KNX IoT downloads and schemas`_.
 
 For the current feature coverage and limitations, see :ref:`knx_iot_software_maturity` and :ref:`knx_iot_known_issues`.

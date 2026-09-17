@@ -8,20 +8,24 @@
 
 #include <knx/knx_app.h>
 #include <stdlib.h>
-#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(light_switch_sensor, LOG_LEVEL_INF);
 
 int main(void)
 {
+	int err;
+
 	LOG_INF("KNX IoT light switch sensor");
 
 	app_register_device();
 
-	if (knx_app_start()) {
-		LOG_ERR("Error Initiating KNX App");
+	err = knx_app_start();
+
+	if (err) {
+		LOG_ERR("Failed to start KNX application: %d", err);
 		return EXIT_FAILURE;
 	}
+
 	return EXIT_SUCCESS;
 }

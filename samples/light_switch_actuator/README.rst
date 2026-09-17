@@ -8,9 +8,9 @@ KNX IoT: Light Switch Actuator
    :depth: 2
 
 This sample demonstrates a KNX IoT light switch actuator built on top of the |addon| for the |NCS|.
-The sample implements the KNX **Light Switching Actuator Basic** (LSAB) functional block and drives a load (shown on an LED) in response to switch on/off S-mode messages received over a Thread network using KNX IoT group communication.
+The sample implements the KNX **Light Switching Actuator Basic** (LSAB) functional block and drives two loads (shown on LEDs) in response to switch on/off S-mode messages received over a Thread network using KNX IoT group communication.
 
-When paired with the :ref:`knx_iot_light_switch_sensor_sample` sample running on a second development kit, the actuator turns its load on and off following the switch state transmitted by the sensor.
+When used with the :ref:`knx_iot_light_switch_sensor_sample` sample running on a second development kit, the actuator turns its loads on and off following the switch states transmitted by the sensor.
 
 Requirements
 ************
@@ -27,6 +27,8 @@ Overview
 The sample acts as a KNX IoT actuator device.
 In this context, the light switch actuator is the device that changes a light state in response to commands from another device, such as a relay, dimmer, smart light bulb, or another output controller.
 It registers a single device profile that exposes the LSAB functional block (number ``417``) on two switching channels.
+Both channels can be configured through ETS.
+The hardcoded development profile configures only the first channel.
 Each channel provides the following datapoints:
 
 * Switch on/off (``soo``) - The control input datapoint (``GET`` and ``PUT``, ``if.i``).
@@ -35,33 +37,43 @@ Each channel provides the following datapoints:
   The actuator announces this value to report its current state back to the group.
 
 When the actuator receives an S-mode multicast write on the ``soo`` datapoint of a channel, it drives its output, mirrors the value to the ``ioo`` datapoint, and announces the new status.
-The switched load of the first channel is represented by an LED.
+The switched loads of the two channels are represented by LED 2 and LED 3.
 
 Commissioning
 =============
 
-The sample currently works only with hardcoded commissioning enabled (the :option:`CONFIG_KNX_HARDCODED_COMMISSIONING` Kconfig option).
-On boot, the sample applies a fixed KNX commissioning profile, which includes the individual address, the group object and publisher tables, and a shared group OSCORE (Object Security for Constrained RESTful Environments) key.
-OSCORE protects KNX IoT messages by encrypting and authenticating them at the application layer.
-In this sample, the shared group OSCORE key lets the actuator and sensor exchange protected messages without the `ETS6 tool`_ or a Thread commissioner.
+The default configuration uses the OpenThread Joiner and ETS6 commissioning.
+See :ref:`knx_iot_ets_commissioning` for the complete procedure.
 
-The shared fabric parameters (group address ``1/1/1`` and the group OSCORE key) are defined in the :file:`samples/common/knx_hardcoded.h` file and must be identical on both devices.
-The actuator uses the individual address ``1.1.1``.
+For a local two-board test without ETS or a Thread Commissioner, build both samples with the hardcoded KNX and Thread profiles:
 
-.. note::
-   Hardcoded commissioning is intended for development and demonstration only.
+.. code-block:: console
+
+   west build -b board_target -- -DEXTRA_CONF_FILE="../common/overlay-knx-hardcoded.conf;../common/overlay-thread-hardcoded.conf"
+
+The hardcoded profiles are intended for development and demonstration only.
 
 User interface
 **************
 
-LED 1:
-   Indicates the network and KNX service status.
-   The LED blinks while the device is waiting to attach to the Thread network.
-   The LED turns on steadily when the Thread network is up and the KNX service has been published.
+LED 0:
+   Indicates the Thread network status.
+   The LED blinks while the device is attaching and remains on when it is attached.
 
-LED 2:
-   Indicates the switched load (light) state of the first channel.
-   The LED follows the received ``soo`` value: it turns on when the switch state is on, and off when it is off.
+LED 1:
+   Indicates the KNX status.
+   The LED blinks in programming mode and remains on after commissioning.
+
+LED 2 and LED 3:
+   Indicate the switched load state of the first and second channels.
+
+Button 0:
+   Short press starts or retries the Thread Joiner.
+   Hold for six seconds to perform a Thread factory reset.
+
+Button 1:
+   Short press toggles KNX programming mode when attached to a Thread network.
+   Hold for six seconds to perform a KNX factory reset.
 
 Configuration
 *************
@@ -70,18 +82,18 @@ Configuration
 
 The following Kconfig options are most relevant for this sample:
 
-* :option:`CONFIG_KNX_HARDCODED_COMMISSIONING` - Applies the hardcoded commissioning profile on boot.
+* :option:`CONFIG_KNX_IOT_PASSWORD` - Sets the password used to generate the SPAKE2+ verifier and onboarding QR code.
+* :option:`CONFIG_KNX_PROGRAMMING_MODE_AUTOSTART` - Enables programming mode temporarily after an uncommissioned device joins Thread.
+* :option:`CONFIG_KNX_HARDCODED_COMMISSIONING` - Applies the development-only hardcoded KNX profile.
 
-The Thread network configuration is provided through the :file:`samples/common/thread_hardcoded.conf` file.
-This file configures a fixed Thread dataset (network name, PAN ID, channel, and network key) so that every device built with it forms or joins the same Thread network on boot, without a Thread commissioner.
-In the current state of the sample, this file is required for the device to function correctly.
+The default Thread profile starts the Joiner automatically with PSKd ``N0RD1C``.
+Use :file:`../common/overlay-thread-hardcoded.conf` for a fixed Thread dataset or :file:`../common/overlay-thread-otshell.conf` to configure and start Thread manually.
 
 Building and running
 ********************
 
 Before you start, make sure you have set up the |addon| as described in the :ref:`knx_iot_setup` page.
 
-This sample requires the Thread hardcoded configuration from :file:`samples/common/thread_hardcoded.conf`.
 You can build using either the |nRFVSC| or the command line.
 
 .. tabs::
@@ -89,8 +101,9 @@ You can build using either the |nRFVSC| or the command line.
    .. group-tab:: nRF Connect for VS Code
 
       1. Open the sample folder in VS Code with the nRF Connect extension installed.
-      2. In the extension's build configuration, add :file:`../common/thread_hardcoded.conf` to **Extra Kconfig fragments**.
-      3. Select a supported board target and build or flash the sample.
+      2. Select a supported board target.
+      3. Optionally add ``-DFILE_SUFFIX=release`` to :guilabel:`Extra CMake arguments` in your build configuration to select a power-optimized build without logs.
+      4. Build and flash the sample.
 
    .. group-tab:: Command line
 
@@ -98,13 +111,19 @@ You can build using either the |nRFVSC| or the command line.
 
       .. code-block:: console
 
-         west build -b board_target -- -DEXTRA_CONF_FILE=../common/thread_hardcoded.conf
+         west build -b board_target
 
       For example, to build for the nRF54L15 DK, run the following command:
 
       .. code-block:: console
 
-         west build -b nrf54l15dk/nrf54l15/cpuapp -- -DEXTRA_CONF_FILE=../common/thread_hardcoded.conf
+         west build -b nrf54l15dk/nrf54l15/cpuapp
+
+      For a power-optimized release build without logging and shell support, add the ``release`` file suffix:
+
+      .. code-block:: console
+
+         west build -b nrf54l15dk/nrf54l15/cpuapp -- -DFILE_SUFFIX=release
 
       After building, program the sample to the development kit:
 
@@ -117,18 +136,20 @@ To enable verbose KNX stack logging for debugging, add :file:`../common/verbose_
 Testing
 *******
 
-After programming the sample to your development kit, you can test it together with the :ref:`knx_iot_light_switch_sensor_sample` sample running on a second kit.
+After commissioning both devices with ETS, or building both with the hardcoded profiles, test the samples as follows:
 
-1. Program the actuator sample to one development kit and the sensor sample to another.
-#. Reset both kits.
-#. Wait until **LED 1** turns on for both kits, which indicates that the Thread network is up and the KNX service is published.
-#. Press **Button 2** on the sensor kit.
+#. Wait until **LED 0** and **LED 1** are steadily lit on both kits.
+#. Press **Button 2** on the sensor kit to test the first channel.
 
    The sensor toggles its switch datapoint and transmits it.
 
 #. Observe that **LED 2** on the actuator kit lights up.
 #. Press **Button 2** on the sensor kit again.
 #. Observe that **LED 2** on the actuator kit turns off.
+
+The hardcoded profile supports this first-channel test.
+When using ETS, you can optionally configure and test the second channel with
+**Button 3** on the sensor kit and **LED 3** on the actuator kit.
 
 Dependencies
 ************

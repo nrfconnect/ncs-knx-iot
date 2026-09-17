@@ -22,6 +22,8 @@
 #endif
 
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/atomic.h>
+#include <zephyr/sys/util.h>
 
 #include "oc_knx_fp.h"
 
@@ -34,8 +36,7 @@ LOG_MODULE_REGISTER(knx_sensor, LOG_LEVEL_INF);
 
 #define NUM_CHANNELS 2
 
-/* The button toggles and transmits channel 0's control datapoint. */
-#define TOGGLE_ID KNX_DP_ID(0, SOO)
+static atomic_t pending_toggles[NUM_CHANNELS];
 
 /*
  * Identity. serialnumber and application_name are non-static because the
@@ -128,36 +129,58 @@ static const knx_preset_t sensor_preset = {
 };
 #endif
 
-/* Runs on the KNX thread: toggle the switch datapoint and transmit it. */
-static void sensor_send_toggle(void)
+static void sensor_toggle_channel(size_t channel)
 {
+	uint16_t toggle_id = KNX_DP_ID(channel, SOO);
 	bool value;
 
-	if (knx_datapoint_get_bool(TOGGLE_ID, &value) < 0) {
+	if (knx_datapoint_get_bool(toggle_id, &value) < 0) {
 		LOG_ERR("button: failed to read sensor SOO");
 		return;
 	}
 
 	value = !value;
 
-	if (knx_datapoint_set_bool(TOGGLE_ID, value) < 0) {
+	if (knx_datapoint_set_bool(toggle_id, value) < 0) {
 		LOG_ERR("button: failed to set sensor SOO");
 		return;
 	}
 
 	LOG_INF("Switch pressed: sending light %s", value ? "on" : "off");
-	knx_datapoint_transmit(TOGGLE_ID);
+	knx_datapoint_transmit(toggle_id);
 }
 
-static void sensor_on_button(void)
+static void sensor_process_buttons(void)
 {
+	for (size_t channel = 0; channel < ARRAY_SIZE(pending_toggles); channel++) {
+		atomic_val_t count = atomic_set(&pending_toggles[channel], 0);
+
+		while (count-- > 0) {
+			sensor_toggle_channel(channel);
+		}
+	}
+}
+
+static void sensor_on_button(enum knx_board_app_button button)
+{
+	size_t channel = (size_t)button;
+
+	if (channel >= ARRAY_SIZE(pending_toggles)) {
+		LOG_ERR("Invalid application button: %d", button);
+		return;
+	}
+
+	atomic_inc(&pending_toggles[channel]);
 	knx_app_post_work();
 }
 
 static void sensor_on_init(void)
 {
-	knx_board_set_button_handler(sensor_on_button);
-	knx_app_set_work_handler(sensor_send_toggle);
+	for (size_t channel = 0; channel < ARRAY_SIZE(pending_toggles); channel++) {
+		atomic_set(&pending_toggles[channel], 0);
+	}
+	knx_board_set_app_button_handler(sensor_on_button);
+	knx_app_set_work_handler(sensor_process_buttons);
 }
 
 static const knx_device_t sensor_device = {

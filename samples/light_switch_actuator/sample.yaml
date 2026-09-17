@@ -1,20 +1,34 @@
 sample:
   name: KNX IoT Light Switch Actuator
   description: KNX IoT light switch actuator sample
+common:
+  sysbuild: true
+  build_only: true
+  integration_platforms:
+    - nrf54l15dk/nrf54l15/cpuapp
+    - nrf54lm20dk/nrf54lm20a/cpuapp
+    - nrf54lm20dk/nrf54lm20b/cpuapp
+  platform_allow:
+    - nrf54l15dk/nrf54l15/cpuapp
+    - nrf54lm20dk/nrf54lm20a/cpuapp
+    - nrf54lm20dk/nrf54lm20b/cpuapp
+  tags:
+    - ci_build
 tests:
-  samples.knx_iot.light_switch_actuator:
-    sysbuild: true
-    build_only: true
-    integration_platforms:
-      - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54lm20dk/nrf54lm20a/cpuapp
-      - nrf54lm20dk/nrf54lm20b/cpuapp
-    platform_allow:
-      - nrf54l15dk/nrf54l15/cpuapp
-      - nrf54lm20dk/nrf54lm20a/cpuapp
-      - nrf54lm20dk/nrf54lm20b/cpuapp
+  # Default: ETS6 commissioning + automatic Thread Joiner.
+  samples.knx_iot.light_switch_actuator: {}
+  samples.knx_iot.light_switch_actuator.release:
     extra_args:
-      - EXTRA_CONF_FILE=../common/thread_hardcoded.conf
-    tags:
-      - ci_build
-
+      - FILE_SUFFIX=release
+  samples.knx_iot.light_switch_actuator.knx_hardcoded:
+    extra_args:
+      - EXTRA_CONF_FILE=../common/overlay-knx-hardcoded.conf
+  samples.knx_iot.light_switch_actuator.thread_hardcoded:
+    extra_args:
+      - EXTRA_CONF_FILE=../common/overlay-thread-hardcoded.conf
+  samples.knx_iot.light_switch_actuator.thread_otshell:
+    extra_args:
+      - EXTRA_CONF_FILE=../common/overlay-thread-otshell.conf
+  samples.knx_iot.light_switch_actuator.hardcoded:
+    extra_args:
+      - EXTRA_CONF_FILE=../common/overlay-knx-hardcoded.conf;../common/overlay-thread-hardcoded.conf

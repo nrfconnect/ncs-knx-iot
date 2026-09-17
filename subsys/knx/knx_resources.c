@@ -28,6 +28,21 @@ LOG_MODULE_REGISTER(knx_resources, LOG_LEVEL_INF);
 
 static const knx_device_t *g_device;
 
+/* Compatibility parameter required by the reference LSAB/LSSB ETS products.
+ * It is outside the functional blocks and uses a reserved datapoint ID.
+ */
+#define KNX_GLOBAL_TEST_PARAMETER_ID KNX_DP_ID(0xFF, 0xFF)
+
+static knx_datapoint_t global_test_parameter = {
+	.path = "/p/globalTestParameter",
+	.dpa = "urn:knx:dpa.65500.201",
+	.dpt = ":dpt.value2Ucount",
+	.id = KNX_GLOBAL_TEST_PARAMETER_ID,
+	.methods = KNX_DP_GET | KNX_DP_PUT,
+	.mirror_to = KNX_DP_NONE,
+	.value = {.kind = KNX_DPT_VALUE_2_UCOUNT},
+};
+
 static inline bool knx_m_value_is(const char *value, size_t value_len, const char *lit)
 {
 	const size_t lit_len = strlen(lit);
@@ -47,6 +62,10 @@ const knx_device_t *knx_device_get(void)
 
 knx_datapoint_t *knx_datapoint_by_id(uint16_t id)
 {
+	if (id == KNX_GLOBAL_TEST_PARAMETER_ID) {
+		return &global_test_parameter;
+	}
+
 	if (g_device == NULL) {
 		return NULL;
 	}
@@ -80,13 +99,9 @@ int knx_datapoint_get(uint16_t id, knx_datapoint_value_t *value)
 		return -EINVAL;
 	}
 
-	switch (dp->value.kind) {
-	case KNX_DPT_BOOL:
-		value->data.boolean = dp->value.data.boolean;
-		return 0;
-	default:
-		return -EINVAL;
-	}
+	*value = dp->value;
+
+	return 0;
 }
 
 int knx_datapoint_set(uint16_t id, knx_datapoint_value_t value)
@@ -101,13 +116,9 @@ int knx_datapoint_set(uint16_t id, knx_datapoint_value_t value)
 		return -EINVAL;
 	}
 
-	switch (dp->value.kind) {
-	case KNX_DPT_BOOL:
-		dp->value.data.boolean = value.data.boolean;
-		return 0;
-	default:
-		return -EINVAL;
-	}
+	dp->value = value;
+
+	return 0;
 }
 
 int knx_datapoint_get_bool(uint16_t id, bool *value)
@@ -135,6 +146,34 @@ int knx_datapoint_set_bool(uint16_t id, bool value)
 	return knx_datapoint_set(id, (knx_datapoint_value_t){
 					     .kind = KNX_DPT_BOOL,
 					     .data.boolean = value,
+				     });
+}
+
+int knx_datapoint_get_u16(uint16_t id, uint16_t *value)
+{
+	if (value == NULL) {
+		return -EINVAL;
+	}
+
+	knx_datapoint_value_t typed_value = {
+		.kind = KNX_DPT_VALUE_2_UCOUNT,
+	};
+	int ret = knx_datapoint_get(id, &typed_value);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	*value = typed_value.data.value_2_ucount;
+
+	return 0;
+}
+
+int knx_datapoint_set_u16(uint16_t id, uint16_t value)
+{
+	return knx_datapoint_set(id, (knx_datapoint_value_t){
+					     .kind = KNX_DPT_VALUE_2_UCOUNT,
+					     .data.value_2_ucount = value,
 				     });
 }
 
@@ -211,6 +250,10 @@ void knx_get_dp(oc_request_t *request, oc_interface_mask_t interfaces, void *use
 								dp->value.data.boolean);
 					error_state = false;
 					break;
+				case KNX_DPT_VALUE_2_UCOUNT:
+					oc_rep_set_uint(root, value, dp->value.data.value_2_ucount);
+					error_state = false;
+					break;
 				default:
 					LOG_ERR("GET %s rejected: unsupported datapoint type %d "
 						"for value "
@@ -267,6 +310,10 @@ void knx_get_dp(oc_request_t *request, oc_interface_mask_t interfaces, void *use
 			oc_rep_i_set_boolean(root, 1, dp->value.data.boolean);
 			error_state = false;
 			break;
+		case KNX_DPT_VALUE_2_UCOUNT:
+			oc_rep_i_set_uint(root, 1, dp->value.data.value_2_ucount);
+			error_state = false;
+			break;
 		default:
 			LOG_ERR("GET %s rejected: unsupported datapoint type %d",
 				oc_string(request->resource->uri), dp->value.kind);
@@ -302,7 +349,10 @@ void knx_get_dp(oc_request_t *request, oc_interface_mask_t interfaces, void *use
 void knx_put_dp(oc_request_t *request, oc_interface_mask_t interfaces, void *user_data)
 {
 	bool error_state = true;
-	bool is_input_datapoint = interfaces & OC_IF_I;
+	/* Writable via a logical input (if.i, functional-block datapoints) or a
+	 * parameter (if.p, e.g. the global test parameter).
+	 */
+	bool is_input_datapoint = interfaces & (OC_IF_I | OC_IF_P);
 	const oc_rep_t *rep = request->request_payload;
 
 	knx_datapoint_t *dp = user_data;
@@ -346,6 +396,17 @@ void knx_put_dp(oc_request_t *request, oc_interface_mask_t interfaces, void *use
 				}
 				value.data.boolean = rep->value.boolean;
 				break;
+			case KNX_DPT_VALUE_2_UCOUNT:
+				if (rep->type != OC_REP_INT || rep->value.integer < 0 ||
+				    rep->value.integer > UINT16_MAX) {
+					LOG_ERR("PUT %s rejected: expected an integer from 0 to %u",
+						oc_string(request->resource->uri), UINT16_MAX);
+					oc_prepare_no_format_response_no_payload(
+						request, OC_STATUS_BAD_REQUEST);
+					return;
+				}
+				value.data.value_2_ucount = (uint16_t)rep->value.integer;
+				break;
 			default:
 				LOG_ERR("PUT %s rejected: unsupported datapoint type %d",
 					oc_string(request->resource->uri), dp->value.kind);
@@ -373,6 +434,10 @@ void knx_put_dp(oc_request_t *request, oc_interface_mask_t interfaces, void *use
 			case KNX_DPT_BOOL:
 				LOG_DBG("set %s to %d", oc_string(request->resource->uri),
 					value.data.boolean);
+				break;
+			case KNX_DPT_VALUE_2_UCOUNT:
+				LOG_INF("set %s to %u", oc_string(request->resource->uri),
+					value.data.value_2_ucount);
 				break;
 			default:
 				break;
@@ -420,12 +485,30 @@ void knx_put_dp(oc_request_t *request, oc_interface_mask_t interfaces, void *use
 	oc_prepare_no_format_response_no_payload(request, OC_STATUS_BAD_REQUEST);
 }
 
+static void register_global_test_parameter(void)
+{
+	oc_resource_t *resource = oc_new_resource(global_test_parameter.path, 1);
+
+	oc_resource_bind_resource_type(resource, global_test_parameter.dpa);
+	oc_resource_bind_dpt(resource, global_test_parameter.dpt);
+	oc_resource_bind_content_type(resource, APPLICATION_CBOR, CONTENT_NONE);
+	oc_resource_set_properties(resource, OC_DISCOVERABLE + OC_OBSERVABLE + OC_WRITE_AFFECTS_FP);
+	oc_resource_set_request_handler(resource, COAP_GET, knx_get_dp, &global_test_parameter,
+					OC_ACL_D, OC_IF_D);
+	oc_resource_set_request_handler(resource, COAP_PUT, knx_put_dp, &global_test_parameter,
+					OC_ACL_P, OC_IF_P);
+
+	oc_add_resource(resource);
+}
+
 void register_resources(void)
 {
 	if (g_device == NULL) {
 		LOG_ERR("register_resources: no device registered");
 		return;
 	}
+
+	register_global_test_parameter();
 
 	for (size_t fb_idx = 0; fb_idx < g_device->num_functional_blocks; fb_idx++) {
 		const knx_functional_block_t *fb = &g_device->functional_blocks[fb_idx];
@@ -465,6 +548,11 @@ void knx_restart_handler(void *data)
 		return;
 	}
 
+	(void)knx_datapoint_set(global_test_parameter.id, (knx_datapoint_value_t){
+							.kind = KNX_DPT_VALUE_2_UCOUNT,
+							.data.value_2_ucount = 0,
+						});
+
 	for (size_t fb_idx = 0; fb_idx < g_device->num_functional_blocks; fb_idx++) {
 		const knx_functional_block_t *fb = &g_device->functional_blocks[fb_idx];
 
@@ -476,6 +564,12 @@ void knx_restart_handler(void *data)
 				(void)knx_datapoint_set(dp->id, (knx_datapoint_value_t){
 									.kind = KNX_DPT_BOOL,
 									.data.boolean = false,
+								});
+				break;
+			case KNX_DPT_VALUE_2_UCOUNT:
+				(void)knx_datapoint_set(dp->id, (knx_datapoint_value_t){
+									.kind = KNX_DPT_VALUE_2_UCOUNT,
+									.data.value_2_ucount = 0,
 								});
 				break;
 			default:

@@ -11,5 +11,13 @@ The most relevant changes that are present on the main branch of the |addon|, as
 Changelog
 *********
 
-Updated KNX IoT Point API Stack to version 1.1.0.
-For information about how to adapt your applications, see the :ref:`KNX IoT migration guide <knx_iot_migration>`.
+Changed:
+
+   * Updated the KNX IoT Point API Stack to version 1.1.0.
+     For information about adapting applications, see the :ref:`KNX IoT migration guide <knx_iot_migration>`.
+
+Added:
+
+   * ETS6 commissioning and OpenThread Joiner support as the default configuration of the light switch samples.
+   * Optional hardcoded and shell-based Thread profiles for development.
+   * Light switch sample support for the nRF54LM20A and nRF54LM20B DK targets.

@@ -46,15 +46,17 @@ extern "C" {
 #define KNX_DP_GET (1U << 0)
 #define KNX_DP_PUT (1U << 1)
 
-/* The light switch sample currently only requires boolean data; the code is prepared for easy
- * extension to other types in the future.
+/* Supported datapoint value types. Add new types here and to the GET, PUT, and
+ * reset paths in knx_resources.c.
  */
 typedef enum {
-	KNX_DPT_BOOL = 0,
+	KNX_DPT_BOOL = 0,	    /* :dpt.switch and other 1-bit booleans */
+	KNX_DPT_VALUE_2_UCOUNT, /* :dpt.value2Ucount, 2-octet unsigned count */
 } knx_dpt_kind_t;
 
 typedef union {
 	bool boolean;
+	uint16_t value_2_ucount;
 } knx_datapoint_data_t;
 
 typedef struct {
@@ -147,6 +149,12 @@ int knx_datapoint_get_bool(uint16_t id, bool *value);
 
 /** @brief Set a boolean datapoint value. */
 int knx_datapoint_set_bool(uint16_t id, bool value);
+
+/** @brief Read a value2Ucount (2-octet unsigned) datapoint value. */
+int knx_datapoint_get_u16(uint16_t id, uint16_t *value);
+
+/** @brief Set a value2Ucount (2-octet unsigned) datapoint value. */
+int knx_datapoint_set_u16(uint16_t id, uint16_t value);
 
 /**
  * @brief Announce a datapoint value as an s-mode multicast write.

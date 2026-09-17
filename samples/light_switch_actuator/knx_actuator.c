@@ -27,9 +27,9 @@
 
 LOG_MODULE_REGISTER(knx_actuator, LOG_LEVEL_INF);
 
-static void actuator_set_light(bool on)
+static void actuator_set_light(size_t channel, bool on)
 {
-	knx_board_set_app_led(on);
+	knx_board_set_app_led((enum knx_board_app_led)channel, on);
 }
 
 /* Datapoint indices within a switching channel. */
@@ -139,20 +139,22 @@ static void actuator_on_write(const knx_datapoint_t *dp)
 			return;
 		}
 
-		actuator_set_light(value);
+		actuator_set_light(KNX_DP_CHANNEL(dp->id), value);
 		LOG_INF("Light turned %s", value ? "on" : "off");
 	}
 }
 
 static void actuator_on_init(void)
 {
-	bool value = false;
+	for (size_t channel = 0; channel < NUM_CHANNELS; channel++) {
+		bool value = false;
 
-	if (knx_datapoint_get_bool(KNX_DP_ID(0, SOO), &value) < 0) {
-		LOG_ERR("failed to read initial actuator SOO");
+		if (knx_datapoint_get_bool(KNX_DP_ID(channel, SOO), &value) < 0) {
+			LOG_ERR("failed to read initial actuator SOO");
+		}
+
+		actuator_set_light(channel, value);
 	}
-
-	actuator_set_light(value);
 }
 
 static const knx_device_t actuator_device = {

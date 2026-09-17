@@ -19,7 +19,7 @@ menuconfig KNX_IOT_ADD_ON
 	select PSA_WANT_ALG_HMAC
 	select PSA_WANT_ALG_HKDF
 	select PSA_WANT_ALG_PBKDF2_HMAC
-    # tinycbor headers pull in NETWORKING even though we don't use the IP stack as an L2.
+	# tinycbor headers pull in NETWORKING even though we don't use the IP stack as an L2.
 	imply NETWORKING
 	imply POSIX_API
 	imply CPP
@@ -36,13 +36,48 @@ menuconfig KNX_IOT_ADD_ON
 
 if KNX_IOT_ADD_ON
 
-config KNX_HARDCODED_COMMISSIONING
-	bool "Apply hardcoded KNX/Thread commissioning on boot"
+choice KNX_COMMISSIONING
+	prompt "KNX commissioning method"
+	default KNX_ETS_COMMISSIONING
 	help
-	  When enabled, the device applies a hardcoded commissioning profile
-	  (individual address, group object/publisher/recipient tables and a
-	  shared group OSCORE key) on boot, so two boards can talk without ETS
-	  or a Thread commissioner. Gates subsys/knx/knx_presets.c.
+	  Select how KNX configuration is applied.
+
+config KNX_ETS_COMMISSIONING
+	bool "ETS6 commissioning"
+	help
+	  Configure the device from ETS6 over Thread.
+
+config KNX_HARDCODED_COMMISSIONING
+	bool "Hardcoded commissioning"
+	help
+	  Apply a fixed KNX configuration on boot.
+
+endchoice
+
+config KNX_IOT_PASSWORD
+	string "KNX IoT SPAKE2+ password"
+	default "2X4W3TE0DFLLS19Y1FCH"
+	help
+	  Password used to generate the SPAKE2+ verifier record at build time.
+	  The generated record, is used by the stack during authentication.
+	  The sample keeps the password in the image so its shell can print
+	  the onboarding QR code.
+
+config KNX_PROGRAMMING_MODE_AUTOSTART
+	bool "Automatically enable programming mode for uncommissioned devices"
+	default n
+	help
+	  Enable KNX programming mode after an uncommissioned device joins the
+	  Thread network. Programming mode is automatically disabled after the
+	  configured timeout or when ETS clears it.
+
+config KNX_PROGRAMMING_MODE_AUTOSTART_TIMEOUT_MINUTES
+	int "Programming mode autostart timeout (minutes)"
+	default 5
+	range 1 60
+	help
+	  Maximum time an uncommissioned device remains discoverable in KNX
+	  programming mode after it joins the Thread network.
 
 config KNX_THREAD_PRIORITY
 	int "KNX event-loop thread priority"
@@ -62,7 +97,7 @@ config KNX_THREAD_STACK_SIZE
 	  paths, whose buffers dominate the requirement.
 
 config KNX_VERBOSE_STACK_LOGS
-	bool "Enable verbose libknx stack logging"
+	bool "Verbose libknx stack logging"
 	default n
 	help
 	  When enabled, libknx logs at DEBUG level and stack PRINT output is

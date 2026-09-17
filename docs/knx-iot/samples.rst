@@ -11,4 +11,5 @@ You can build the samples for a variety of board targets and configure them for 
    :caption: Contents
    :glob:
 
+   samples/ets_commissioning
    samples/*/README

@@ -55,9 +55,9 @@ The following table indicates the software maturity levels of the support for ea
            - Experimental
            - Experimental
          * - **Standard commissioning with ETS / Management Client (MaC)**
-           - --
-           - --
-           - --
+           - Experimental
+           - Experimental
+           - Experimental
          * - **IPv6 transport over Wi-Fi or Ethernet**
            - --
            - --

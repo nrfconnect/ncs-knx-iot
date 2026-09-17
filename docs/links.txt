@@ -42,6 +42,7 @@
 .. _`KNX IoT downloads and schemas`: https://schema.knx.org/
 .. _`KNX IoT Point API Stack repository`: https://gitlab.knx.org/public-projects/knx-iot-point-api/knx-iot-point-api-stack
 .. _`KNX IoT Point API demos`: https://gitlab.knx.org/public-projects/knx-iot-point-api/knx-iot-point-api-demos
+.. _`KNX IoT virtual LSxB product entry`: https://gitlab.knx.org/public-projects/knx-iot-point-api/knx-iot-point-api-demos/-/blob/v1.1.0/apps/knx/ets/knx_iot_virtual_lsxb.knxprod?ref_type=tags
 
 .. ### IETF standards (RFCs)
 

@@ -6,14 +6,33 @@
 
 zephyr_library()
 
-# Device-agnostic application layer
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+
+set(KNX_IOT_SPAKE_RECORD_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/knx_spake_record.c")
+add_custom_command(
+  OUTPUT ${KNX_IOT_SPAKE_RECORD_SOURCE}
+  COMMAND ${Python3_EXECUTABLE} ${KNX_IOT_SPAKE_RECORD_GENERATOR}
+          --stack-generator ${KNX_IOT_STACK_SPAKE_RECORD_GENERATOR}
+          --password "${CONFIG_KNX_IOT_PASSWORD}"
+          --symbol knx_dev_spake_record
+          --output ${KNX_IOT_SPAKE_RECORD_SOURCE}
+  DEPENDS ${KNX_IOT_SPAKE_RECORD_GENERATOR}
+          ${KNX_IOT_STACK_SPAKE_RECORD_GENERATOR}
+  COMMENT "Generating the KNX IoT SPAKE2+ verifier record"
+  VERBATIM
+)
+
+# Device-agnostic application layer.
 zephyr_library_sources(knx_app.c)
 zephyr_library_sources(knx_stack.c)
 zephyr_library_sources(knx_resources.c)
 zephyr_library_sources(knx_transport.c)
+zephyr_library_sources(${KNX_IOT_SPAKE_RECORD_SOURCE})
 
-# Shared board support (status LED, button dispatch, future factory reset).
+# Board UI
+zephyr_library_sources_ifdef(CONFIG_DK_LIBRARY knx_leds.c)
+zephyr_library_sources_ifdef(CONFIG_DK_LIBRARY knx_buttons.c)
 zephyr_library_sources_ifdef(CONFIG_DK_LIBRARY knx_board.c)
 
-# Hardcoded "automatic" commissioning mechanism (parameterised by the device).
+# Hardcoded KNX commissioning for development.
 zephyr_library_sources_ifdef(CONFIG_KNX_HARDCODED_COMMISSIONING knx_presets.c)
