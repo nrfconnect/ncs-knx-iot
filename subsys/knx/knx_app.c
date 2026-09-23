@@ -27,6 +27,7 @@
 #include <openthread/dataset.h>
 #include <openthread/instance.h>
 #include <openthread/joiner.h>
+#include <openthread/srp_client.h>
 #include <openthread/thread.h>
 #include <errno.h>
 
@@ -64,6 +65,7 @@ static struct {
 	knx_lifecycle_cb_t work_handler;
 	atomic_t thread_joiner_pending;
 	atomic_t thread_factory_reset_pending;
+	struct k_sem thread_factory_reset_sem;
 	atomic_t network_state_pending;
 #if defined(CONFIG_KNX_ETS_COMMISSIONING)
 	atomic_t knx_factory_reset_pending;
@@ -287,14 +289,53 @@ static void knx_request_thread_factory_reset(void)
 	knx_post_action(&knx_ctx.thread_factory_reset_pending);
 }
 
+static void knx_thread_factory_reset_srp_callback(otError error,
+						  const otSrpClientHostInfo *host_info,
+						  const otSrpClientService *services,
+						  const otSrpClientService *removed_services,
+						  void *context)
+{
+	ARG_UNUSED(services);
+	ARG_UNUSED(removed_services);
+	ARG_UNUSED(context);
+
+	if (error == OT_ERROR_NONE && host_info != NULL &&
+	    host_info->mState == OT_SRP_CLIENT_ITEM_STATE_REMOVED) {
+		k_sem_give(&knx_ctx.thread_factory_reset_sem);
+	}
+}
+
 static void knx_thread_factory_reset(void)
 {
 	otInstance *instance = openthread_get_default_instance();
+	otError error;
 
 	LOG_INF("Thread factory reset requested");
 	if (instance == NULL) {
 		LOG_ERR("Cannot factory reset Thread: OpenThread is unavailable");
 		return;
+	}
+
+	/* A Thread factory reset destroys the persistent SRP signing key. Release
+	 * the host's key lease first so the device can reclaim its DNS name with a
+	 * newly generated key after it joins a Thread network again.
+	 */
+	k_sem_reset(&knx_ctx.thread_factory_reset_sem);
+	openthread_mutex_lock();
+	otSrpClientSetCallback(instance, knx_thread_factory_reset_srp_callback, NULL);
+	error = otSrpClientRemoveHostAndServices(instance, true, true);
+	openthread_mutex_unlock();
+
+	if (error == OT_ERROR_NONE) {
+		if (k_sem_take(&knx_ctx.thread_factory_reset_sem,
+			       K_SECONDS(CONFIG_KNX_THREAD_FACTORY_RESET_SRP_TIMEOUT_SECONDS)) == 0) {
+			LOG_INF("SRP host and key lease removed");
+		} else {
+			LOG_WRN("Timed out removing SRP host; stale registration may remain");
+		}
+	} else if (error != OT_ERROR_ALREADY) {
+		LOG_WRN("Failed to request SRP host removal [%d]; stale registration may remain",
+			error);
 	}
 
 	openthread_mutex_lock();
@@ -426,6 +467,7 @@ int knx_app_start(void)
 	atomic_set(&knx_ctx.work_pending, 0);
 	atomic_set(&knx_ctx.thread_joiner_pending, 0);
 	atomic_set(&knx_ctx.thread_factory_reset_pending, 0);
+	k_sem_init(&knx_ctx.thread_factory_reset_sem, 0, 1);
 	atomic_set(&knx_ctx.network_state_pending, 0);
 #if defined(CONFIG_KNX_ETS_COMMISSIONING)
 	atomic_set(&knx_ctx.knx_factory_reset_pending, 0);

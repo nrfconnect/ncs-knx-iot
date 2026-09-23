@@ -95,6 +95,15 @@ config KNX_THREAD_STACK_SIZE
 	  (oc_main_poll). The loop reaches into the stack's CoAP and OSCORE
 	  paths, whose buffers dominate the requirement.
 
+config KNX_THREAD_FACTORY_RESET_SRP_TIMEOUT_SECONDS
+	int "SRP removal timeout before Thread factory reset (seconds)"
+	default 3
+	range 1 10
+	help
+	  Maximum time to wait for the SRP server to confirm removal of the
+	  device's host registration and key lease before erasing OpenThread
+	  persistent state. The factory reset continues after the timeout.
+
 config KNX_VERBOSE_STACK_LOGS
 	bool "Verbose libknx stack logging"
 	help
