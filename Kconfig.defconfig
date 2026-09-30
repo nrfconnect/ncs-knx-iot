@@ -20,4 +20,10 @@ config KNXIOT_LOG_LEVEL
 config KNX_UNICAST_PORT
 	default 5683
 
+# KNX IoT group communication uses site-local (ff35::) multicast. A Thread
+# Backbone Router forwards such multicast from the infrastructure link into
+# the mesh only for addresses registered through MLR.
+config OPENTHREAD_MLR
+	default y if OPENTHREAD
+
 endif # KNX_IOT_ADD_ON
