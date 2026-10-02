@@ -7,6 +7,7 @@
 menuconfig KNX_IOT_ADD_ON
 	bool "KNX IoT stack"
 	select KNXIOT_LIB
+	select EXPERIMENTAL if SOC_NRF54LC10A
 	# PSA Crypto surface used by SPAKE2+ / ECDSA enrollment.
 	select REQUIRES_FULL_LIBC
 	select FPU
