@@ -28,17 +28,33 @@
 
 LOG_MODULE_REGISTER(knx_actuator, LOG_LEVEL_INF);
 
-static void actuator_set_light(size_t channel, bool on)
-{
-	knx_board_set_app_led((enum knx_board_app_led)channel, on);
-}
-
 /* Datapoint indices within a switching channel. */
 #define SOO	   0 /* switch on/off (control) */
 #define IOO	   1 /* info on/off (status) */
 #define NUM_POINTS 2
 
 #define NUM_CHANNELS 2
+
+/* The light blinks while the actuator reads the current state from the group
+ * after startup (I-flag on SOO), and then shows it. The stored state is used if
+ * no response arrives.
+ */
+static void actuator_update_light(size_t channel)
+{
+	uint16_t state_id = KNX_DP_ID(channel, SOO);
+	enum knx_led_mode mode = KNX_LED_OFF;
+	bool value;
+
+	if (knx_datapoint_init_read_pending(state_id)) {
+		mode = KNX_LED_BLINK;
+	} else if (knx_datapoint_get_bool(state_id, &value) < 0) {
+		LOG_ERR("failed to read actuator SOO");
+	} else if (value) {
+		mode = KNX_LED_ON;
+	}
+
+	knx_board_set_app_led_mode((enum knx_board_app_led)channel, mode);
+}
 
 /*
  * Identity. serialnumber and application_name are non-static because the
@@ -77,7 +93,8 @@ static knx_datapoint_t actuator_parameters[] = {
  * status output (GET, if.o). During typical operation, the actuator listens for
  * s-mode multicasts on its SOO from devices bound to the same GA. When this
  * happens, it sets the indicator led, mirrors the value to IOO and announces
- * it, so the switch can know it worked.
+ * it, so the switch can know it worked. SOO is the light state and persists
+ * across reboots; IOO is rebuilt from it.
  */
 static knx_datapoint_t actuator_datapoints[] = {
 	{.path = "/p/lsab/0/soo",
@@ -91,6 +108,7 @@ static knx_datapoint_t actuator_datapoints[] = {
 	 .put_acl = OC_ACL_I,
 	 .put_iface = OC_IF_I,
 	 .mirror_to = KNX_DP_ID(0, IOO),
+	 .persist = knx_persist_always,
 	 .value = {.kind = KNX_DPT_BOOL}},
 	{.path = "/p/lsab/0/ioo",
 	 .dpa = "urn:knx:dpa.417.51",
@@ -113,6 +131,7 @@ static knx_datapoint_t actuator_datapoints[] = {
 	 .put_acl = OC_ACL_I,
 	 .put_iface = OC_IF_I,
 	 .mirror_to = KNX_DP_ID(1, IOO),
+	 .persist = knx_persist_always,
 	 .value = {.kind = KNX_DPT_BOOL}},
 	{.path = "/p/lsab/1/ioo",
 	 .dpa = "urn:knx:dpa.417.51",
@@ -155,32 +174,44 @@ static const knx_preset_t actuator_preset = {
 };
 #endif
 
+static bool actuator_is_state(const knx_datapoint_t *dp)
+{
+	return !KNX_DP_IS_PARAMETER(dp->id) && KNX_DP_CHANNEL(dp->id) < NUM_CHANNELS &&
+	       KNX_DP_POINT(dp->id) == SOO;
+}
+
 /* Runs on the KNX thread after a PUT: mirror the switched state to the LED. */
 static void actuator_on_write(const knx_datapoint_t *dp)
 {
 	bool value;
 
-	if (!KNX_DP_IS_PARAMETER(dp->id) && KNX_DP_POINT(dp->id) == SOO) {
-		if (knx_datapoint_get_bool(dp->id, &value) < 0) {
-			LOG_ERR("failed to read written actuator SOO");
-			return;
-		}
+	if (!actuator_is_state(dp)) {
+		return;
+	}
 
-		actuator_set_light(KNX_DP_CHANNEL(dp->id), value);
+	actuator_update_light(KNX_DP_CHANNEL(dp->id));
+	if (knx_datapoint_get_bool(dp->id, &value) == 0) {
 		LOG_INF("Light turned %s", value ? "on" : "off");
 	}
+}
+
+static void actuator_on_init_read(const knx_datapoint_t *dp, bool received)
+{
+	if (!actuator_is_state(dp)) {
+		return;
+	}
+
+	if (!received) {
+		LOG_WRN("No state received for %s, using the stored state", dp->path);
+	}
+
+	actuator_update_light(KNX_DP_CHANNEL(dp->id));
 }
 
 static void actuator_on_init(void)
 {
 	for (size_t channel = 0; channel < NUM_CHANNELS; channel++) {
-		bool value = false;
-
-		if (knx_datapoint_get_bool(KNX_DP_ID(channel, SOO), &value) < 0) {
-			LOG_ERR("failed to read initial actuator SOO");
-		}
-
-		actuator_set_light(channel, value);
+		actuator_update_light(channel);
 	}
 }
 
@@ -193,6 +224,7 @@ static const knx_device_t actuator_device = {
 	.on_init = actuator_on_init,
 	.on_ready = NULL,
 	.on_write = actuator_on_write,
+	.on_init_read = actuator_on_init_read,
 #if defined(CONFIG_KNX_HARDCODED_COMMISSIONING)
 	.preset = &actuator_preset,
 #else

@@ -6,7 +6,8 @@
 
 /*
  * Indicator LED support for the KNX add-on. Each logical LED can be off, on,
- * or blinking. A temporary global override is used for factory-reset feedback.
+ * blinking, or flashing briefly once per period. A temporary global override is
+ * used for factory-reset feedback.
  *
  * The runtime LED APIs are thread-safe but may sleep, so they must not be
  * called from an ISR. Call knx_leds_init() once before using the other APIs.
@@ -29,6 +30,7 @@ enum knx_led_mode {
 	KNX_LED_OFF,
 	KNX_LED_ON,
 	KNX_LED_BLINK,
+	KNX_LED_FLASH, /** Mostly off with a short flash once per period*/
 };
 
 /**

@@ -281,6 +281,7 @@ static void knx_knx_factory_reset(void)
 {
 	LOG_INF("KNX factory reset requested");
 	oc_knx_device_reset(RESET_TO_DEFAULT_STATE);
+	knx_datapoints_factory_reset();
 }
 #endif /* CONFIG_KNX_ETS_COMMISSIONING */
 
@@ -392,6 +393,11 @@ static void knx_on_network_ready(const knx_device_t *dev)
 		LOG_INF("KNX service published");
 	}
 
+#if defined(CONFIG_KNXIOT_CLIENT)
+	/* Start fetching the "real" value of datapoints*/
+	knx_init_read_start();
+#endif
+
 	if (dev->on_ready != NULL) {
 		dev->on_ready();
 	}
@@ -491,6 +497,8 @@ int knx_app_start(void)
 	}
 	LOG_INF("KNX stack initialized");
 
+	knx_datapoints_load();
+
 #if defined(CONFIG_KNX_HARDCODED_COMMISSIONING)
 	if (dev->preset != NULL) {
 		ret = knx_apply_presets(dev->preset);
@@ -499,6 +507,10 @@ int knx_app_start(void)
 			return ret;
 		}
 	}
+#endif
+
+#if defined(CONFIG_KNXIOT_CLIENT)
+	knx_init_read_begin();
 #endif
 
 #if defined(CONFIG_DK_LIBRARY)

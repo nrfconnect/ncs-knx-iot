@@ -104,6 +104,24 @@ config KNX_THREAD_FACTORY_RESET_SRP_TIMEOUT_SECONDS
 	  device's host registration and key lease before erasing OpenThread
 	  persistent state. The factory reset continues after the timeout.
 
+config KNX_READ_ON_INIT_RESPONSE_TIMEOUT_MS
+	int "Read-on-init response timeout (milliseconds)"
+	default 2000
+	depends on KNXIOT_CLIENT
+	help
+	  Time to wait for the responses after the last read-on-init request,
+	  for group objects with the Read on Init (I) flag. After timeout datapoints
+	  without a response are read again, or reported as not received.
+
+config KNX_READ_ON_INIT_RETRIES
+	int "Read-on-init retries"
+	default 1
+	range 0 5
+	depends on KNXIOT_CLIENT
+	help
+	  Number of times the read-on-init requests are sent again when a
+	  response is missing after KNX_READ_ON_INIT_RESPONSE_TIMEOUT_MS.
+
 config KNX_VERBOSE_STACK_LOGS
 	bool "Verbose libknx stack logging"
 	help

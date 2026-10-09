@@ -15,8 +15,10 @@
 #include "knx_priv.h"
 
 #include <errno.h>
+#include <stdio.h>
 
 #include <zephyr/logging/log.h>
+#include <zephyr/settings/settings.h>
 
 #include "api/oc_knx_fp.h"
 #include "oc_api.h"
@@ -26,7 +28,64 @@
 
 LOG_MODULE_REGISTER(knx_resources, LOG_LEVEL_INF);
 
+/* Settings subtree for persisted datapoint values, keyed by datapoint id. */
+#define KNX_DP_SETTINGS_PREFIX	 "knx_dp"
+#define KNX_DP_SETTINGS_KEY_SIZE sizeof(KNX_DP_SETTINGS_PREFIX "/ffff")
+
 static const knx_device_t *g_device;
+
+/* Number of stored bytes for each datapoint type, or 0 if the type cannot be
+ * persisted.
+ */
+static size_t datapoint_value_size(knx_dpt_kind_t kind)
+{
+	switch (kind) {
+	case KNX_DPT_BOOL:
+		return sizeof(bool);
+	case KNX_DPT_VALUE_2_UCOUNT:
+		return sizeof(uint16_t);
+	default:
+		return 0;
+	}
+}
+
+static void datapoint_settings_key(const knx_datapoint_t *dp, char *key, size_t key_size)
+{
+	(void)snprintf(key, key_size, KNX_DP_SETTINGS_PREFIX "/%04x", dp->id);
+}
+
+static int datapoint_store(const knx_datapoint_t *dp)
+{
+	const size_t size = datapoint_value_size(dp->value.kind);
+	char key[KNX_DP_SETTINGS_KEY_SIZE];
+
+	if (size == 0) {
+		LOG_ERR("cannot persist %s: unsupported datapoint type %d", dp->path,
+			dp->value.kind);
+		return -ENOTSUP;
+	}
+
+	datapoint_settings_key(dp, key, sizeof(key));
+
+	const int ret = settings_save_one(key, &dp->value.data, size);
+
+	if (ret != 0) {
+		LOG_ERR("failed to persist %s: %d", dp->path, ret);
+	}
+
+	return ret;
+}
+
+knx_persist_action_t knx_persist_always(const knx_datapoint_t *dp,
+					const knx_datapoint_value_t *stored_value,
+					const knx_datapoint_value_t *new_value)
+{
+	(void)dp;
+	(void)stored_value;
+	(void)new_value;
+
+	return KNX_PERSIST_STORE;
+}
 
 static inline bool knx_m_value_is(const char *value, size_t value_len, const char *lit)
 {
@@ -70,6 +129,13 @@ knx_datapoint_t *knx_datapoint_by_id(uint16_t id)
 	return NULL;
 }
 
+bool knx_datapoint_init_read_pending(uint16_t id)
+{
+	const knx_datapoint_t *dp = knx_datapoint_by_id(id);
+
+	return dp != NULL && dp->init_read_pending;
+}
+
 int knx_datapoint_get(uint16_t id, knx_datapoint_value_t *value)
 {
 	if (value == NULL) {
@@ -104,6 +170,17 @@ int knx_datapoint_set(uint16_t id, knx_datapoint_value_t value)
 	}
 
 	dp->value = value;
+
+	if (dp->persist == NULL) {
+		return 0;
+	}
+
+	const knx_datapoint_value_t stored = {.kind = dp->value.kind, .data = dp->stored};
+
+	/* A failed write keeps the old stored value, so the next change retries. */
+	if (dp->persist(dp, &stored, &value) == KNX_PERSIST_STORE && datapoint_store(dp) == 0) {
+		dp->stored = dp->value.data;
+	}
 
 	return 0;
 }
@@ -412,6 +489,10 @@ void knx_put_dp(oc_request_t *request, oc_interface_mask_t interfaces, void *use
 				return;
 			}
 
+#if defined(CONFIG_KNXIOT_CLIENT)
+			knx_init_read_finish(dp, true);
+#endif
+
 			if (g_device->on_write != NULL) {
 				g_device->on_write(dp);
 			}
@@ -520,23 +601,148 @@ void register_resources(void)
 	}
 }
 
+void knx_datapoint_for_each(void (*visit)(knx_datapoint_t *dp))
+{
+	for (size_t parameter_idx = 0; parameter_idx < g_device->num_parameters; parameter_idx++) {
+		visit(&g_device->parameters[parameter_idx]);
+	}
+
+	for (size_t fb_idx = 0; fb_idx < g_device->num_functional_blocks; fb_idx++) {
+		const knx_functional_block_t *fb = &g_device->functional_blocks[fb_idx];
+
+		for (size_t dp_idx = 0; dp_idx < fb->num_datapoints; dp_idx++) {
+			visit(&fb->datapoints[dp_idx]);
+		}
+	}
+}
+
+/* Assigns the default value directly, bypassing the persistence policy. */
 static void reset_datapoint(knx_datapoint_t *dp)
 {
 	switch (dp->value.kind) {
 	case KNX_DPT_BOOL:
-		(void)knx_datapoint_set(dp->id, (knx_datapoint_value_t){
-							.kind = KNX_DPT_BOOL,
-							.data.boolean = false,
-						});
+		dp->value.data.boolean = false;
 		break;
 	case KNX_DPT_VALUE_2_UCOUNT:
-		(void)knx_datapoint_set(dp->id, (knx_datapoint_value_t){
-							.kind = KNX_DPT_VALUE_2_UCOUNT,
-							.data.value_2_ucount = 0,
-						});
+		dp->value.data.value_2_ucount = 0;
 		break;
 	default:
 		break;
+	}
+}
+
+/* Copies a persisted value onto its mirror target without announcing it. */
+static void sync_mirror(const knx_datapoint_t *dp)
+{
+	if (dp->mirror_to == KNX_DP_NONE) {
+		return;
+	}
+
+	knx_datapoint_t *mirror = knx_datapoint_by_id((uint16_t)dp->mirror_to);
+
+	if (mirror == NULL || mirror->value.kind != dp->value.kind) {
+		LOG_ERR("cannot mirror %s onto datapoint id 0x%04x", dp->path,
+			(uint16_t)dp->mirror_to);
+		return;
+	}
+
+	mirror->value = dp->value;
+}
+
+static void restore_datapoint(knx_datapoint_t *dp)
+{
+	const size_t size = datapoint_value_size(dp->value.kind);
+	knx_datapoint_data_t data = {0};
+	char key[KNX_DP_SETTINGS_KEY_SIZE];
+
+	datapoint_settings_key(dp, key, sizeof(key));
+
+	const ssize_t ret = settings_load_one(key, &data, sizeof(data));
+
+	if (ret == 0) {
+		return;
+	}
+
+	if (ret < 0 || (size_t)ret != size) {
+		LOG_ERR("ignoring stored value of %s: %d", dp->path, (int)ret);
+		return;
+	}
+
+	dp->value.data = data;
+	sync_mirror(dp);
+	LOG_DBG("restored %s", dp->path);
+}
+
+static void load_datapoint(knx_datapoint_t *dp)
+{
+	if (dp->persist == NULL) {
+		return;
+	}
+
+	restore_datapoint(dp);
+	dp->stored = dp->value.data;
+}
+
+void knx_datapoints_load(void)
+{
+	if (g_device == NULL) {
+		LOG_ERR("datapoint load called before KNX device registration");
+		return;
+	}
+
+	knx_datapoint_for_each(load_datapoint);
+}
+
+static void factory_reset_datapoint(knx_datapoint_t *dp)
+{
+	if (dp->persist == NULL) {
+		return;
+	}
+
+	char key[KNX_DP_SETTINGS_KEY_SIZE];
+
+	datapoint_settings_key(dp, key, sizeof(key));
+
+	const int ret = settings_delete(key);
+
+	reset_datapoint(dp);
+	if (ret == 0) {
+		dp->stored = dp->value.data;
+	} else {
+		LOG_ERR("failed to erase stored value of %s: %d", dp->path, ret);
+	}
+	sync_mirror(dp);
+
+	if (g_device->on_write != NULL) {
+		g_device->on_write(dp);
+	}
+}
+
+void knx_datapoints_factory_reset(void)
+{
+	if (g_device == NULL) {
+		LOG_ERR("datapoint factory reset called before KNX device registration");
+		return;
+	}
+
+	knx_datapoint_for_each(factory_reset_datapoint);
+
+#if defined(CONFIG_KNXIOT_CLIENT)
+	knx_init_read_cancel();
+#endif
+}
+
+static void restart_datapoint(knx_datapoint_t *dp)
+{
+	if (dp->persist == NULL) {
+		reset_datapoint(dp);
+	}
+}
+
+static void restart_sync_mirror(knx_datapoint_t *dp)
+{
+	if (dp->persist != NULL) {
+		sync_mirror(dp);
 	}
 }
 
@@ -549,15 +755,6 @@ void knx_restart_handler(void *data)
 		return;
 	}
 
-	for (size_t parameter_idx = 0; parameter_idx < g_device->num_parameters; parameter_idx++) {
-		reset_datapoint(&g_device->parameters[parameter_idx]);
-	}
-
-	for (size_t fb_idx = 0; fb_idx < g_device->num_functional_blocks; fb_idx++) {
-		const knx_functional_block_t *fb = &g_device->functional_blocks[fb_idx];
-
-		for (size_t dp_idx = 0; dp_idx < fb->num_datapoints; dp_idx++) {
-			reset_datapoint(&fb->datapoints[dp_idx]);
-		}
-	}
+	knx_datapoint_for_each(restart_datapoint);
+	knx_datapoint_for_each(restart_sync_mirror);
 }

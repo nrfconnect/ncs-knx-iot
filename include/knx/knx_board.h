@@ -18,6 +18,8 @@
 #ifndef KNX_BOARD_H_
 #define KNX_BOARD_H_
 
+#include <knx/knx_leds.h>
+
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -83,6 +85,14 @@ void knx_board_update_status(void);
  * @param on  true to switch the LED on, false to switch it off.
  */
 void knx_board_set_app_led(enum knx_board_app_led led, bool on);
+
+/**
+ * @brief Set the display mode of an application output LED.
+ *
+ * @param led  Application LED identifier.
+ * @param mode Mode to display.
+ */
+void knx_board_set_app_led_mode(enum knx_board_app_led led, enum knx_led_mode mode);
 
 /**
  * @brief Register the handler for the application buttons.

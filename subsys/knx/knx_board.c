@@ -191,6 +191,11 @@ int knx_board_init(void)
 
 void knx_board_set_app_led(enum knx_board_app_led led, bool on)
 {
+	knx_board_set_app_led_mode(led, on ? KNX_LED_ON : KNX_LED_OFF);
+}
+
+void knx_board_set_app_led_mode(enum knx_board_app_led led, enum knx_led_mode mode)
+{
 	enum board_led board_led;
 
 	switch (led) {
@@ -205,7 +210,7 @@ void knx_board_set_app_led(enum knx_board_app_led led, bool on)
 		return;
 	}
 
-	knx_leds_set(board_led, on ? KNX_LED_ON : KNX_LED_OFF);
+	knx_leds_set(board_led, mode);
 }
 
 void knx_board_set_app_button_handler(knx_board_app_button_handler_t handler)

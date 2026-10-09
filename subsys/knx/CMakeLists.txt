@@ -28,6 +28,7 @@ zephyr_library_sources(knx_stack.c)
 zephyr_library_sources(knx_resources.c)
 zephyr_library_sources(knx_transport.c)
 zephyr_library_sources(${KNX_IOT_SPAKE_RECORD_SOURCE})
+zephyr_library_sources_ifdef(CONFIG_KNXIOT_CLIENT knx_init_read.c)
 
 # Board UI
 zephyr_library_sources_ifdef(CONFIG_DK_LIBRARY knx_leds.c)

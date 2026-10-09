@@ -73,11 +73,13 @@ static knx_datapoint_t sensor_parameters[] = {
 
 /* LSSB: soo is the control output (GET, if.o); ioo is the status input
  * (GET + PUT, if.i). No mirroring. During typical operation, this would behave
- * something like this: The button is pressed this device's SOO is toggled,
- * s-mode multicast is send. If there is a actuator bound to the same GA, it
- * receives the message, writes its SOO, updates its output (LED) and announces
- * its IOO status. this switch receives it and updates its IOO and now the
- * values at SOO and IOO match.
+ * something like this: The button is pressed, this device sends the inverse of
+ * its IOO on SOO as an s-mode multicast and records the sent value in IOO. If
+ * there is an actuator bound to the same GA, it receives the message, writes
+ * its SOO, updates its output (LED) and announces its IOO status. This switch
+ * receives it and updates its IOO, so a light switched elsewhere toggles
+ * correctly on the next press. Nothing is persisted: the light state belongs to
+ * the actuator, and with the I-flag set on IOO the stack reads it at startup.
  */
 static knx_datapoint_t sensor_datapoints[] = {
 	{.path = "/p/lssb/0/soo",
@@ -155,13 +157,50 @@ static const knx_preset_t sensor_preset = {
 };
 #endif
 
+/* The channel LED blinks while the status is unknown after startup, then shows
+ * the reported light state as a short flash.
+ */
+static void sensor_update_channel_led(size_t channel)
+{
+	uint16_t status_id = KNX_DP_ID(channel, IOO);
+	enum knx_led_mode mode = KNX_LED_OFF;
+	bool value;
+
+	if (knx_datapoint_init_read_pending(status_id)) {
+		mode = KNX_LED_BLINK;
+	} else if (knx_datapoint_get_bool(status_id, &value) == 0 && value) {
+		mode = KNX_LED_FLASH;
+	}
+
+	knx_board_set_app_led_mode((enum knx_board_app_led)channel, mode);
+}
+
+static void sensor_on_status(const knx_datapoint_t *dp)
+{
+	if (KNX_DP_CHANNEL(dp->id) >= NUM_CHANNELS || KNX_DP_POINT(dp->id) != IOO) {
+		return;
+	}
+
+	sensor_update_channel_led(KNX_DP_CHANNEL(dp->id));
+}
+
+static void sensor_on_init_read(const knx_datapoint_t *dp, bool received)
+{
+	if (!received) {
+		LOG_WRN("No status received for %s", dp->path);
+	}
+
+	sensor_on_status(dp);
+}
+
 static void sensor_toggle_channel(size_t channel)
 {
 	uint16_t toggle_id = KNX_DP_ID(channel, SOO);
+	uint16_t status_id = KNX_DP_ID(channel, IOO);
 	bool value;
 
-	if (knx_datapoint_get_bool(toggle_id, &value) < 0) {
-		LOG_ERR("button: failed to read sensor SOO");
+	if (knx_datapoint_get_bool(status_id, &value) < 0) {
+		LOG_ERR("button: failed to read sensor IOO");
 		return;
 	}
 
@@ -171,6 +210,13 @@ static void sensor_toggle_channel(size_t channel)
 		LOG_ERR("button: failed to set sensor SOO");
 		return;
 	}
+
+	if (knx_datapoint_set_bool(status_id, value) < 0) {
+		LOG_ERR("button: failed to set sensor IOO");
+		return;
+	}
+
+	sensor_update_channel_led(channel);
 
 	LOG_INF("Switch pressed: sending light %s", value ? "on" : "off");
 	knx_datapoint_transmit(toggle_id);
@@ -204,6 +250,7 @@ static void sensor_on_init(void)
 {
 	for (size_t channel = 0; channel < ARRAY_SIZE(pending_toggles); channel++) {
 		atomic_set(&pending_toggles[channel], 0);
+		sensor_update_channel_led(channel);
 	}
 	knx_board_set_app_button_handler(sensor_on_button);
 	knx_app_set_work_handler(sensor_process_buttons);
@@ -217,7 +264,8 @@ static const knx_device_t sensor_device = {
 	.num_functional_blocks = NUM_CHANNELS,
 	.on_init = sensor_on_init,
 	.on_ready = NULL,
-	.on_write = NULL,
+	.on_write = sensor_on_status,
+	.on_init_read = sensor_on_init_read,
 #if defined(CONFIG_KNX_HARDCODED_COMMISSIONING)
 	.preset = &sensor_preset,
 #else

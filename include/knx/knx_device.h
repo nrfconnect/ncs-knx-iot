@@ -49,8 +49,8 @@ extern "C" {
 #define KNX_DP_GET (1U << 0)
 #define KNX_DP_PUT (1U << 1)
 
-/* Supported datapoint value types. Add new types here and to the GET, PUT, and
- * reset paths in knx_resources.c.
+/* Supported datapoint value types. Add new types here and to the GET, PUT,
+ * reset and persistence-size paths in knx_resources.c.
  */
 typedef enum {
 	KNX_DPT_BOOL = 0,	    /* :dpt.switch and other 1-bit booleans */
@@ -67,7 +67,24 @@ typedef struct {
 	knx_datapoint_data_t data;
 } knx_datapoint_value_t;
 
-typedef struct {
+typedef struct knx_datapoint knx_datapoint_t;
+
+/* Decision returned by a persistence policy for a single value change. */
+typedef enum {
+	KNX_PERSIST_SKIP = 0, /* keep the new value in RAM only */
+	KNX_PERSIST_STORE,    /* write the new value to non-volatile storage now */
+} knx_persist_action_t;
+
+/*
+ * Decides whether a datapoint value change is written to non-volatile storage.
+ * Called on every knx_datapoint_set(), after the new value is applied.
+ * Both values have dp->value.kind, so the policy can compare them by type.
+ */
+typedef knx_persist_action_t (*knx_persist_policy_t)(const knx_datapoint_t *dp,
+						     const knx_datapoint_value_t *stored_value,
+						     const knx_datapoint_value_t *new_value);
+
+struct knx_datapoint {
 	char *path; /* resource path, e.g. "/p/lsab/0/soo" (chosen by app)*/
 	char *dpa;  /* resource type / DPA URN, e.g. "urn:knx:dpa.417.52" (from the
 		       standard)*/
@@ -83,8 +100,17 @@ typedef struct {
 	oc_interface_mask_t put_iface;	     /* PUT interface */
 	int32_t mirror_to; /* datapoint id mirrored + announced on write, or KNX_DP_NONE */
 
+	/* Restored at boot and written on change according to the policy, or
+	 * NULL to keep the value in RAM only. Persisted values survive a KNX
+	 * restart and are cleared by a KNX factory reset.
+	 */
+	knx_persist_policy_t persist;
+
 	knx_datapoint_value_t value; /* current value, with its datapoint type */
-} knx_datapoint_t;
+
+	bool init_read_pending;	     /* Runtime state managed by the add-on */
+	knx_datapoint_data_t stored; /* value in storage, has value.kind */
+};
 
 typedef struct {
 	uint16_t number;  /* KNX functional-block number, e.g. 417 (LSAB) */
@@ -102,8 +128,17 @@ typedef struct {
 	uint32_t mid;		      /* manufacturer id */
 } knx_identity_t;
 
-/* Invoked on the KNX thread after a PUT updated a datapoint. */
+/* Invoked on the KNX thread after a PUT or a KNX factory reset updated a
+ * datapoint.
+ */
 typedef void (*knx_write_cb_t)(const knx_datapoint_t *dp);
+
+/* Invoked on the KNX thread when the device stops waiting for the read-on-init
+ * response of a datapoint. received is true if a response or another write
+ * updated the value, and false if the requests timed out or the device did not
+ * attach in time. A response that arrives later is reported through on_write.
+ */
+typedef void (*knx_init_read_cb_t)(const knx_datapoint_t *dp, bool received);
 
 /* Generic lifecycle hook. (on_init, on_ready etc.) */
 typedef void (*knx_lifecycle_cb_t)(void);
@@ -122,7 +157,9 @@ typedef struct {
 	/* All optional (may be NULL): */
 	knx_lifecycle_cb_t on_init;  /* after stack init + presets, before the KNX thread starts */
 	knx_lifecycle_cb_t on_ready; /* network up + service published (KNX thread) */
-	knx_write_cb_t on_write;     /* after a PUT updated a datapoint (KNX thread) */
+	knx_write_cb_t on_write;     /* after a PUT or factory reset (KNX thread) */
+	knx_init_read_cb_t
+		on_init_read; /* read-on-init finished waiting for a datapoint value (KNX thread) */
 
 	const struct knx_preset *preset; /* hardcoded commissioning, or NULL */
 } knx_device_t;
@@ -137,8 +174,26 @@ void knx_device_register(const knx_device_t *device);
 /** @brief Get the registered device profile (NULL if none registered). */
 const knx_device_t *knx_device_get(void);
 
+/**
+ * @brief Persistence policy that stores every write.
+ *
+ * Use as knx_datapoint_t.persist for datapoints that change rarely.
+ */
+knx_persist_action_t knx_persist_always(const knx_datapoint_t *dp,
+					const knx_datapoint_value_t *stored_value,
+					const knx_datapoint_value_t *new_value);
+
 /** @brief Look up a datapoint by id (NULL if not found). */
 knx_datapoint_t *knx_datapoint_by_id(uint16_t id);
+
+/**
+ * @brief Check whether the device still waits for a datapoint's read-on-init response.
+ *
+ * A commissioned device waits from startup for every datapoint whose group
+ * object has the Read on Init (I) flag, until a response arrives or the
+ * requests time out.
+ */
+bool knx_datapoint_init_read_pending(uint16_t id);
 
 /* Those generic functions should be used in the common implementation. Whenever
  * data type is known, the typed helpers should be used*/

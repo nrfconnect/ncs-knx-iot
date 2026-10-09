@@ -61,6 +61,15 @@ static void restart_presets_cb(void *data)
 	knx_restart_handler(data);
 }
 
+static void reset_cb(int reset_value, void *data)
+{
+	(void)data;
+
+	if (reset_value == RESET_TO_DEFAULT_STATE || reset_value == RESET_TO_DEFAULT_WO_IA) {
+		knx_datapoints_factory_reset();
+	}
+}
+
 static void hostname_cb(const oc_string_t host_name, void *data)
 {
 	(void)data;
@@ -110,6 +119,7 @@ int knx_stack_init(const char *storage_folder_name)
 	oc_set_hostname_cb(hostname_cb, NULL);
 	oc_set_factory_presets_cb(factory_presets_cb, NULL);
 	oc_set_restart_cb(restart_presets_cb, NULL);
+	oc_set_reset_cb(reset_cb, NULL);
 
 	return oc_main_init(&handler);
 }
