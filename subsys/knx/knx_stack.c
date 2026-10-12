@@ -68,6 +68,9 @@ static void hostname_cb(const oc_string_t host_name, void *data)
 	LOG_DBG("host name: %s", oc_string(host_name));
 }
 
+BUILD_ASSERT(sizeof(CONFIG_KNX_SERIAL_NUMBER) == SERIAL_NUM_SIZE + 1,
+	     "CONFIG_KNX_SERIAL_NUMBER must have 12 characters");
+
 static int knx_stack_init_device(void)
 {
 	const knx_identity_t *id = knx_device_get()->identity;

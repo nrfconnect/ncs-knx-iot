@@ -64,6 +64,15 @@ config KNX_IOT_PASSWORD
 	  The sample keeps the password in the image so its shell can print
 	  the onboarding QR code.
 
+config KNX_SERIAL_NUMBER
+	string "KNX serial number"
+	help
+	  KNX serial number of the device: 12 lower-case hexadecimal characters,
+	  starting with the manufacturer ID. ETS identifies devices by serial
+	  number, so each device commissioned in the same ETS project needs a
+	  unique value. The serial number also forms the onboarding QR code and
+	  the DNS-SD hostname.
+
 config KNX_PROGRAMMING_MODE_AUTOSTART
 	bool "Automatically enable programming mode for uncommissioned devices"
 	help
