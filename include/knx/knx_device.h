@@ -53,13 +53,15 @@ extern "C" {
  * reset and persistence-size paths in knx_resources.c.
  */
 typedef enum {
-	KNX_DPT_BOOL = 0,	    /* :dpt.switch and other 1-bit booleans */
+	KNX_DPT_BOOL = 0,	/* :dpt.switch and other 1-bit booleans */
 	KNX_DPT_VALUE_2_UCOUNT, /* :dpt.value2Ucount, 2-octet unsigned count */
+	KNX_DPT_VALUE_4_COUNT,	/* :dpt.value4Count and other signed 32-bit integers */
 } knx_dpt_kind_t;
 
 typedef union {
 	bool boolean;
 	uint16_t value_2_ucount;
+	int32_t value_4_count;
 } knx_datapoint_data_t;
 
 typedef struct {
@@ -219,6 +221,12 @@ int knx_datapoint_get_u16(uint16_t id, uint16_t *value);
 
 /** @brief Set a value2Ucount (2-octet unsigned) datapoint value. */
 int knx_datapoint_set_u16(uint16_t id, uint16_t value);
+
+/** @brief Read a value4Count (4-octet signed) datapoint value. */
+int knx_datapoint_get_s32(uint16_t id, int32_t *value);
+
+/** @brief Set a value4Count (4-octet signed) datapoint value. */
+int knx_datapoint_set_s32(uint16_t id, int32_t value);
 
 /**
  * @brief Announce a datapoint value as an s-mode multicast write.

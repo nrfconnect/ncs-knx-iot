@@ -15,6 +15,7 @@
 #include "knx_priv.h"
 
 #include <errno.h>
+#include <inttypes.h>
 #include <stdio.h>
 
 #include <zephyr/logging/log.h>
@@ -44,6 +45,8 @@ static size_t datapoint_value_size(knx_dpt_kind_t kind)
 		return sizeof(bool);
 	case KNX_DPT_VALUE_2_UCOUNT:
 		return sizeof(uint16_t);
+	case KNX_DPT_VALUE_4_COUNT:
+		return sizeof(int32_t);
 	default:
 		return 0;
 	}
@@ -241,6 +244,34 @@ int knx_datapoint_set_u16(uint16_t id, uint16_t value)
 				     });
 }
 
+int knx_datapoint_get_s32(uint16_t id, int32_t *value)
+{
+	if (value == NULL) {
+		return -EINVAL;
+	}
+
+	knx_datapoint_value_t typed_value = {
+		.kind = KNX_DPT_VALUE_4_COUNT,
+	};
+	int ret = knx_datapoint_get(id, &typed_value);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	*value = typed_value.data.value_4_count;
+
+	return 0;
+}
+
+int knx_datapoint_set_s32(uint16_t id, int32_t value)
+{
+	return knx_datapoint_set(id, (knx_datapoint_value_t){
+					     .kind = KNX_DPT_VALUE_4_COUNT,
+					     .data.value_4_count = value,
+				     });
+}
+
 void knx_datapoint_transmit(uint16_t id)
 {
 	const knx_datapoint_t *dp = knx_datapoint_by_id(id);
@@ -318,6 +349,11 @@ void knx_get_dp(oc_request_t *request, oc_interface_mask_t interfaces, void *use
 					oc_rep_set_uint(root, value, dp->value.data.value_2_ucount);
 					error_state = false;
 					break;
+				case KNX_DPT_VALUE_4_COUNT:
+					oc_rep_text_set_int(root, value,
+							    dp->value.data.value_4_count);
+					error_state = false;
+					break;
 				default:
 					LOG_ERR("GET %s rejected: unsupported datapoint type %d "
 						"for value "
@@ -376,6 +412,10 @@ void knx_get_dp(oc_request_t *request, oc_interface_mask_t interfaces, void *use
 			break;
 		case KNX_DPT_VALUE_2_UCOUNT:
 			oc_rep_i_set_uint(root, 1, dp->value.data.value_2_ucount);
+			error_state = false;
+			break;
+		case KNX_DPT_VALUE_4_COUNT:
+			oc_rep_i_set_int(root, 1, dp->value.data.value_4_count);
 			error_state = false;
 			break;
 		default:
@@ -471,6 +511,17 @@ void knx_put_dp(oc_request_t *request, oc_interface_mask_t interfaces, void *use
 				}
 				value.data.value_2_ucount = (uint16_t)rep->value.integer;
 				break;
+			case KNX_DPT_VALUE_4_COUNT:
+				if (rep->type != OC_REP_INT || rep->value.integer < INT32_MIN ||
+				    rep->value.integer > INT32_MAX) {
+					LOG_ERR("PUT %s rejected: expected a signed 32-bit integer",
+						oc_string(request->resource->uri));
+					oc_prepare_no_format_response_no_payload(
+						request, OC_STATUS_BAD_REQUEST);
+					return;
+				}
+				value.data.value_4_count = (int32_t)rep->value.integer;
+				break;
 			default:
 				LOG_ERR("PUT %s rejected: unsupported datapoint type %d",
 					oc_string(request->resource->uri), dp->value.kind);
@@ -506,6 +557,10 @@ void knx_put_dp(oc_request_t *request, oc_interface_mask_t interfaces, void *use
 			case KNX_DPT_VALUE_2_UCOUNT:
 				LOG_INF("set %s to %u", oc_string(request->resource->uri),
 					value.data.value_2_ucount);
+				break;
+			case KNX_DPT_VALUE_4_COUNT:
+				LOG_INF("set %s to %" PRId32, oc_string(request->resource->uri),
+					value.data.value_4_count);
 				break;
 			default:
 				break;
@@ -625,6 +680,9 @@ static void reset_datapoint(knx_datapoint_t *dp)
 		break;
 	case KNX_DPT_VALUE_2_UCOUNT:
 		dp->value.data.value_2_ucount = 0;
+		break;
+	case KNX_DPT_VALUE_4_COUNT:
+		dp->value.data.value_4_count = 0;
 		break;
 	default:
 		break;
