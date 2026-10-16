@@ -24,9 +24,11 @@ The following table indicates the software maturity levels of the support for ea
 
          * - Feature
            - nRF54L15
+           - nRF54LC10A
            - nRF54LM20A
            - nRF54LM20B
          * - **KNX IoT Point API device**
+           - Experimental
            - Experimental
            - Experimental
            - Experimental
@@ -34,7 +36,9 @@ The following table indicates the software maturity levels of the support for ea
            - Experimental
            - Experimental
            - Experimental
+           - Experimental
          * - **CoAP messaging and CBOR encoding**
+           - Experimental
            - Experimental
            - Experimental
            - Experimental
@@ -42,7 +46,9 @@ The following table indicates the software maturity levels of the support for ea
            - Experimental
            - Experimental
            - Experimental
+           - Experimental
          * - **OSCORE application-layer security**
+           - Experimental
            - Experimental
            - Experimental
            - Experimental
@@ -50,7 +56,9 @@ The following table indicates the software maturity levels of the support for ea
            - Experimental
            - Experimental
            - Experimental
+           - Experimental
          * - **Hardcoded commissioning**
+           - Experimental
            - Experimental
            - Experimental
            - Experimental
@@ -58,7 +66,9 @@ The following table indicates the software maturity levels of the support for ea
            - Experimental
            - Experimental
            - Experimental
+           - Experimental
          * - **IPv6 transport over Wi-Fi or Ethernet**
+           - --
            - --
            - --
            - --

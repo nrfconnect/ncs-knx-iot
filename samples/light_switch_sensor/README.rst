@@ -27,8 +27,7 @@ Overview
 The sample acts as a KNX IoT sensor device.
 In this context, the light switch sensor is the device that detects triggers for changing another device's light state, such as a physical light switch, occupancy sensor, or another input source.
 It registers a single device profile that exposes the LSSB functional block (number ``421``) on two switching channels.
-Both channels can be configured through ETS.
-The hardcoded development profile configures only the first channel.
+Both channels can be configured through ETS or the hardcoded development profile.
 Each channel provides the following datapoints:
 
 * Switch on/off (``soo``) - The control output datapoint (``GET``, ``if.o``).
@@ -36,9 +35,13 @@ Each channel provides the following datapoints:
 * Info on/off (``ioo``) - The status input datapoint (``GET`` and ``PUT``, ``if.i``).
   It reflects the status reported back by the bound actuator.
 
-When you press **Button 2** or **Button 3**, the sample toggles the ``soo`` datapoint of the corresponding channel and transmits it as an S-mode multicast write to every device bound to the same group address.
-The hardcoded development profile configures group communication only for the first channel.
+When you press **Button 2** or **Button 3**, the sample sends the inverse of the ``ioo`` value of the corresponding channel on its ``soo`` datapoint, as an S-mode multicast write to every device bound to the same group address.
 A bound actuator receives the S-mode message, drives its output, and announces its own status, which the sensor stores in its ``ioo`` datapoint.
+Because the sensor toggles from the reported light state, a light that was switched by another device toggles correctly on the next press.
+
+The sensor does not store the light state, because the state belongs to the actuator.
+If the ``ioo`` group object of a channel has the Read on Init (I) flag set in ETS, the sensor reads the current light state from the group after it attaches to the network.
+For more information, see :ref:`knx_iot_read_on_init`.
 
 Commissioning
 =============
@@ -46,37 +49,95 @@ Commissioning
 The default configuration uses the OpenThread Joiner and ETS commissioning.
 To join the Thread network and commission the device with ETS, follow the :ref:`knx_iot_quickstart`.
 
-For a local two-board test without ETS or a Thread Commissioner, build both samples with the hardcoded KNX and Thread profiles:
+For a local test without ETS or a Thread Commissioner, build both samples with the hardcoded KNX and Thread profiles:
 
 .. code-block:: console
 
    west build -b board_target -- -DEXTRA_CONF_FILE="../common/overlay-knx-hardcoded.conf;../common/overlay-thread-hardcoded.conf"
 
+The hardcoded KNX profile binds the first channel to group address ``1/1/1`` and the second channel to group address ``1/1/2``.
+The ``ioo`` datapoint of each channel also listens to the group address of the channel, so several sensors that control the same actuator stay in sync.
 The hardcoded profiles are intended for development and demonstration only.
+
+For more information about the commissioning methods, see :ref:`knx_iot_addon_commissioning`.
 
 User interface
 **************
 
-LED 0:
-   Indicates the Thread network status.
-   The LED blinks while the device is attaching and remains on when it is attached.
+.. tabs::
 
-LED 1:
-   Indicates the KNX status.
-   The LED blinks in programming mode and remains on after commissioning.
+   .. group-tab:: Development kits
 
-Button 0:
-   Short press starts or retries the Thread Joiner.
-   Hold for six seconds to perform a Thread factory reset.
+      LED 0:
+         Indicates the Thread network status.
+         The LED blinks while the device is attaching and remains on when it is attached.
 
-Button 1:
-   Short press toggles KNX programming mode.
-   Use it after the device has attached to a Thread network (**LED 0** steadily lit).
-   Hold for six seconds to perform a KNX factory reset.
-   Available only with ETS commissioning (:option:`CONFIG_KNX_ETS_COMMISSIONING`).
+      LED 1:
+         Indicates the KNX status.
+         The LED blinks in programming mode and remains on after commissioning.
 
-Button 2 and Button 3:
-   Toggle the switch on/off (``soo``) datapoint of the first and second channels and transmit it to the bound groups.
+      LED 2 and LED 3:
+         Indicate the light state reported for the first and second channels.
+         The LED shows a short flash once per second when the light is on, and is off when the light is off.
+         The LED blinks while the sensor waits for the read-on-init response of the channel.
+
+      Button 0:
+         Short press starts or retries the Thread Joiner.
+         Hold for six seconds to perform a Thread factory reset.
+
+      Button 1:
+         Short press toggles KNX programming mode.
+         Use it after the device has attached to a Thread network (**LED 0** steadily lit).
+         Hold for six seconds to perform a KNX factory reset.
+         Available only with ETS commissioning (:option:`CONFIG_KNX_ETS_COMMISSIONING`).
+
+      Button 2 and Button 3:
+         Send the inverse of the reported light state (``ioo``) of the corresponding channel on the ``soo`` datapoint to the bound groups.
+
+   .. group-tab:: nRF54L15 TAG
+
+      The nRF54L15 TAG has one RGB LED and one button, and uses the :option:`CONFIG_KNX_UI_LAYOUT_SINGLE_BUTTON_RGB` layout.
+      The color of the LED shows the current commissioning stage, and the button performs the action relevant to that stage.
+      Only the first switching channel is available.
+
+      .. list-table::
+         :header-rows: 1
+         :widths: auto
+
+         * - Stage
+           - RGB LED
+           - Short press
+           - Long press
+         * - Not attached to Thread
+           - Red, short flash
+           - Start the Thread Joiner
+           - --
+         * - Attaching to Thread
+           - Red, blinking
+           - Retry the Thread Joiner
+           - --
+         * - Attached, KNX not commissioned
+           - Blue, solid
+           - Toggle KNX programming mode
+           - Thread factory reset
+         * - Attached, KNX not commissioned, programming mode on
+           - Blue, blinking
+           - Toggle KNX programming mode
+           - Thread factory reset
+         * - KNX commissioned
+           - Green, short flash
+           - Send the inverse of the reported light state (``ioo``) of the first channel on ``soo``
+           - KNX factory reset
+         * - KNX commissioned, programming mode on
+           - Blue, blinking
+           - Toggle KNX programming mode
+           - KNX factory reset
+
+      A long press means holding the button for six seconds.
+      After three seconds, the LED blinks white to indicate that the long-press action is armed.
+      Release the button while the LED blinks white to cancel the action.
+
+      With hardcoded KNX commissioning, the device is commissioned as soon as it attaches to the Thread network, and a long press in the commissioned stage performs a Thread factory reset.
 
 Configuration
 *************
@@ -85,6 +146,7 @@ Configuration
 
 The following Kconfig options are most relevant for this sample:
 
+* :option:`CONFIG_KNX_SERIAL_NUMBER` - Sets the KNX serial number of the device (``00fa10020700`` by default for this sample).
 * :option:`CONFIG_KNX_PROGRAMMING_MODE_AUTOSTART` - Enables programming mode temporarily after an uncommissioned device joins Thread.
 * :option:`CONFIG_KNX_HARDCODED_COMMISSIONING` - Applies the development-only hardcoded KNX profile.
 
@@ -145,6 +207,12 @@ In the |nRFVSC|, add ``-DSNIPPET=knx-verbose-logging`` to :guilabel:`Extra CMake
 
 The snippet enables :option:`CONFIG_KNX_VERBOSE_STACK_LOGS`, enlarges the log buffer, and increases the console UART baud rate from the default 115200 to 1000000 to avoid dropping logs.
 
+Building for the nRF54L15 TAG
+=============================
+
+The nRF54L15 TAG has no UART, so the sample routes its logs and shell to SEGGER RTT when built for the ``nrf54l15tag/nrf54l15/cpuapp`` board target.
+To program the TAG and read its RTT output, connect it to the **DEBUG OUT** header of an nRF54L DK and power it as described in the `nrf54l15tag`_ board documentation.
+
 Testing
 *******
 
@@ -155,13 +223,14 @@ After commissioning both devices with ETS as described in the :ref:`knx_iot_quic
 
    The sensor toggles its switch datapoint and transmits it.
 
-#. Observe that **LED 2** on the actuator kit lights up.
+#. Observe that **LED 2** on the actuator kit lights up, and **LED 2** on the sensor kit starts flashing briefly to show the reported light state.
 #. Press **Button 2** on the sensor kit again.
-#. Observe that **LED 2** on the actuator kit turns off.
+#. Observe that **LED 2** on both kits turns off.
+#. Repeat the previous steps for the second channel with **Button 3** and **LED 3**.
+   When using ETS, the second channel must be linked in the ETS project.
+   Otherwise, the sensor logs that the channel is not configured.
 
-The hardcoded profile supports this first-channel test.
-When using ETS, you can optionally configure and test the second channel with
-**Button 3** on the sensor kit and **LED 3** on the actuator kit.
+If you use the nRF54L15 TAG as the sensor, wait until the RGB LED flashes green, and then press the button to toggle **LED 2** on the actuator kit.
 
 Dependencies
 ************

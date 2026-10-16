@@ -27,8 +27,7 @@ Overview
 The sample acts as a KNX IoT actuator device.
 In this context, the light switch actuator is the device that changes a light state in response to commands from another device, such as a relay, dimmer, smart light bulb, or another output controller.
 It registers a single device profile that exposes the LSAB functional block (number ``417``) on two switching channels.
-Both channels can be configured through ETS.
-The hardcoded development profile configures only the first channel.
+Both channels can be configured through ETS or the hardcoded development profile.
 Each channel provides the following datapoints:
 
 * Switch on/off (``soo``) - The control input datapoint (``GET`` and ``PUT``, ``if.i``).
@@ -39,19 +38,35 @@ Each channel provides the following datapoints:
 When the actuator receives an S-mode multicast write on the ``soo`` datapoint of a channel, it drives its output, mirrors the value to the ``ioo`` datapoint, and announces the new status.
 The switched loads of the two channels are represented by LED 2 and LED 3.
 
+Light state persistence
+=======================
+
+The actuator stores the ``soo`` value of each channel in non-volatile memory whenever it changes.
+After a reboot, the actuator restores the stored light state and shows it on the channel LED.
+A KNX factory reset erases the stored state and switches the loads off.
+
+If the ``soo`` group object of a channel has the Read on Init (I) flag set in ETS, the actuator also reads the current light state from the group after it attaches to the network.
+This lets an actuator recover a state that was switched while it was turned off, for example when several actuators share one group.
+The channel LED blinks while the actuator waits for the response.
+If no response arrives, the actuator keeps the stored state.
+For more information, see :ref:`knx_iot_datapoint_persistence` and :ref:`knx_iot_read_on_init`.
+
 Commissioning
 =============
 
 The default configuration uses the OpenThread Joiner and ETS commissioning.
 To join the Thread network and commission the device with ETS, follow the :ref:`knx_iot_quickstart`.
 
-For a local two-board test without ETS or a Thread Commissioner, build both samples with the hardcoded KNX and Thread profiles:
+For a local test without ETS or a Thread Commissioner, build both samples with the hardcoded KNX and Thread profiles:
 
 .. code-block:: console
 
    west build -b board_target -- -DEXTRA_CONF_FILE="../common/overlay-knx-hardcoded.conf;../common/overlay-thread-hardcoded.conf"
 
+The hardcoded KNX profile binds the first channel to group address ``1/1/1`` and the second channel to group address ``1/1/2``.
 The hardcoded profiles are intended for development and demonstration only.
+
+For more information about the commissioning methods, see :ref:`knx_iot_addon_commissioning`.
 
 User interface
 **************
@@ -66,6 +81,7 @@ LED 1:
 
 LED 2 and LED 3:
    Indicate the switched load state of the first and second channels.
+   The LED blinks while the actuator waits for the read-on-init response of the channel.
 
 Button 0:
    Short press starts or retries the Thread Joiner.
@@ -84,6 +100,7 @@ Configuration
 
 The following Kconfig options are most relevant for this sample:
 
+* :option:`CONFIG_KNX_SERIAL_NUMBER` - Sets the KNX serial number of the device (``00fa10020900`` by default for this sample).
 * :option:`CONFIG_KNX_PROGRAMMING_MODE_AUTOSTART` - Enables programming mode temporarily after an uncommissioned device joins Thread.
 * :option:`CONFIG_KNX_HARDCODED_COMMISSIONING` - Applies the development-only hardcoded KNX profile.
 
@@ -157,10 +174,10 @@ After commissioning both devices with ETS as described in the :ref:`knx_iot_quic
 #. Observe that **LED 2** on the actuator kit lights up.
 #. Press **Button 2** on the sensor kit again.
 #. Observe that **LED 2** on the actuator kit turns off.
-
-The hardcoded profile supports this first-channel test.
-When using ETS, you can optionally configure and test the second channel with
-**Button 3** on the sensor kit and **LED 3** on the actuator kit.
+#. Repeat the previous steps for the second channel with **Button 3** on the sensor kit and **LED 3** on the actuator kit.
+   When using ETS, the second channel must be linked in the ETS project.
+#. Press **Button 2** on the sensor kit to turn on **LED 2** on the actuator kit, and then reset the actuator kit.
+#. Observe that **LED 2** on the actuator kit lights up again after the actuator restarts.
 
 Dependencies
 ************

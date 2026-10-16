@@ -55,7 +55,7 @@ The most important building blocks are summarized below and described in detail 
   See :ref:`knx_iot_group_communication`.
 * **S-Mode group communication** - The same group-address-based messaging model as classic KNX, so KNX IoT devices interwork with the rest of a KNX system.
   See :ref:`knx_iot_group_communication`.
-* **Reused KNX application model** - The same functional blocks, datapoint types, and ETS-based configuration as other KNX media.
+* **Reused KNX application model** - The same functional blocks, datapoint types, and configuration with ETS as other KNX media.
   See :ref:`knx_iot_device_model`.
 
 For the canonical description of these building blocks, see the `KNX IoT documentation`_ and the `KNX IoT Point API Stack`_ introduction.

@@ -32,6 +32,17 @@ A device's participation in group communication is defined by three tables, writ
 
 Together these tables decide what a device sends, where it sends it, and what it accepts.
 
+Communication flags
+-------------------
+
+Each Group Object Table entry carries communication flags that define how its datapoint takes part in group communication:
+
+* **Read (R)** - The device answers group read requests with the datapoint value.
+* **Write (W)** - The device accepts group write messages that change the datapoint value.
+* **Transmit (T)** - The device sends the datapoint value to the group when the value changes.
+* **Update (U)** - Together with the Write flag, the device accepts group responses as value updates.
+* **Read on Init (I)** - The device sends a group read request at startup to fetch the current value from the group.
+
 Multicast and unicast
 =====================
 
@@ -56,10 +67,6 @@ The following diagram shows the basic flow when a switch (sensor) toggles a ligh
 
 At runtime, a device sends a group notification by POSTing to the ``/k`` resource of its targets (or to a multicast group), carrying the source address, target group address, service type (write, read, or response), and the datapoint value.
 Subscribers can also use CoAP *Observe* on ``/k`` to receive notifications.
-
-.. note::
-   After commissioning, the :ref:`knx_iot_samples` use group addresses and OSCORE keys configured by ETS.
-   See :ref:`knx_iot_commissioning` for more information.
 
 Read, write, and subscribe
 **************************

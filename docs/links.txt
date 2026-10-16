@@ -7,10 +7,12 @@
 .. ### NCS documentation set
 
 .. _`Configuring and building`: https://nrfconnectdocs.nordicsemi.com/ncs/|ncs_version|/nrf/app_dev/config_and_build/index.html
+.. _`nrf54lc10dk`: https://docs.nordicsemi.com/bundle/ncs-|ncs_version|/page/nrf/boards/nordic/nrf54lc10dk/doc/index.html
 
 .. ### Zephyr documentation set
 
 .. _`nrf54l15dk`: https://docs.nordicsemi.com/bundle/ncs-|ncs_version|/page/zephyr/boards/nordic/nrf54l15dk/doc/index.html
+.. _`nrf54l15tag`: https://docs.nordicsemi.com/bundle/ncs-|ncs_version|/page/zephyr/boards/nordic/nrf54l15tag/doc/index.html
 .. _`nrf54lm20dk`: https://docs.nordicsemi.com/bundle/ncs-|ncs_version|/page/zephyr/boards/nordic/nrf54lm20dk/doc/index.html
 .. _`DK Buttons and LEDs`: https://docs.nordicsemi.com/bundle/ncs-|ncs_version|/page/nrf/libraries/others/dk_buttons_and_leds.html
 .. _`Logging`: https://docs.nordicsemi.com/bundle/ncs-|ncs_version|/page/zephyr/services/logging/index.html

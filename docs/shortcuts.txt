@@ -1,6 +1,6 @@
 .. ### Versions
 
-.. |ncs_version| replace:: 3.4.0
+.. |ncs_version| replace:: 3.4.1
 .. |knx-iot_version| replace:: 1.1.0
 .. |addon_version| replace:: 0.1.0
 
@@ -8,6 +8,7 @@
 .. |addon| replace:: KNX IoT add-on
 
 .. |nRFVSC| replace:: nRF Connect for VS Code extension
+.. |EITT| replace:: KNX Interworking Test Tool (EITT)
 
 .. |no_changes_yet_note| replace:: No changes since the latest |addon| release.
 
