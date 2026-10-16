@@ -5,3 +5,4 @@
 #
 
 add_subdirectory(knx)
+add_subdirectory_ifdef(CONFIG_DK_LIBRARY ui)

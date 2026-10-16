@@ -138,4 +138,6 @@ config KNX_VERBOSE_STACK_LOGS
 	  When enabled, libknx logs at DEBUG level and stack PRINT output is
 	  routed to Zephyr logging.
 
+rsource "ui/Kconfig"
+
 endif # KNX_IOT_ADD_ON
