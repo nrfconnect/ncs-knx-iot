@@ -34,6 +34,9 @@ zephyr_library_sources_ifdef(CONFIG_KNXIOT_CLIENT knx_init_read.c)
 zephyr_library_sources_ifdef(CONFIG_DK_LIBRARY knx_leds.c)
 zephyr_library_sources_ifdef(CONFIG_DK_LIBRARY knx_buttons.c)
 zephyr_library_sources_ifdef(CONFIG_DK_LIBRARY knx_board.c)
+zephyr_library_sources_ifdef(CONFIG_KNX_UI_LAYOUT_DK knx_ui_layout_dk.c)
+zephyr_library_sources_ifdef(CONFIG_KNX_UI_LAYOUT_SINGLE_BUTTON_RGB
+  knx_ui_layout_single_button_rgb.c)
 
 # Hardcoded KNX commissioning for development.
 zephyr_library_sources_ifdef(CONFIG_KNX_HARDCODED_COMMISSIONING knx_presets.c)

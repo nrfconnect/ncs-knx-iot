@@ -138,4 +138,34 @@ config KNX_VERBOSE_STACK_LOGS
 	  When enabled, libknx logs at DEBUG level and stack PRINT output is
 	  routed to Zephyr logging.
 
+menu "Board user interface"
+	depends on DK_LIBRARY
+
+choice KNX_UI_LAYOUT
+	prompt "Board user interface layout"
+	default KNX_UI_LAYOUT_SINGLE_BUTTON_RGB if BOARD_NRF54L15TAG
+	default KNX_UI_LAYOUT_DK
+	help
+	  Select how device state is shown on the board LEDs and how button
+	  presses map to Thread, KNX, and application actions.
+
+config KNX_UI_LAYOUT_DK
+	bool "Development kit (four LEDs, four buttons)"
+	help
+	  Dedicated status LEDs for Thread and KNX, a dedicated button for
+	  Thread actions and for KNX actions, two application buttons and
+	  LEDs.
+
+config KNX_UI_LAYOUT_SINGLE_BUTTON_RGB
+	bool "Single button and RGB LED"
+	help
+	  One RGB LED shows the current commissioning stage in a different
+	  colour, and one button performs the action relevant to that stage.
+	  The devicetree must provide the knx-ui-rgb-led alias pointing to a
+	  leds-group-multicolor node, and the sw0 alias for the button.
+
+endchoice
+
+endmenu
+
 endif # KNX_IOT_ADD_ON

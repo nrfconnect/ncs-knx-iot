@@ -10,31 +10,67 @@
 #include <stdbool.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(knx_leds, LOG_LEVEL_INF);
+
+BUILD_ASSERT(KNX_LEDS_COUNT < 32, "LED masks are 32 bits wide");
 
 #define BLINK_PERIOD_MS 200
 #define FLASH_ON_MS	50
 #define FLASH_PERIOD_MS 1000
 
+/* Timed on/off pattern shared by every LED displaying the same mode. */
+struct knx_leds_animation {
+	enum knx_led_mode mode;
+	uint32_t on_ms;
+	uint32_t off_ms;
+	bool active;
+	bool phase;
+	struct k_work_delayable work;
+};
+
 static K_MUTEX_DEFINE(lock);
 
 static enum knx_led_mode led_mode[KNX_LEDS_COUNT];
 static enum knx_led_mode override_mode;
+static uint32_t override_leds;
 static bool override_active;
-static bool blink_phase;
-static bool flash_phase;
-static struct k_work_delayable blink_work;
-static struct k_work_delayable flash_work;
 
-static bool has_mode_locked(enum knx_led_mode mode)
+static struct knx_leds_animation animations[] = {
+	{.mode = KNX_LED_BLINK, .on_ms = BLINK_PERIOD_MS, .off_ms = BLINK_PERIOD_MS},
+	{.mode = KNX_LED_FLASH, .on_ms = FLASH_ON_MS, .off_ms = FLASH_PERIOD_MS - FLASH_ON_MS},
+};
+
+static bool mode_is_valid(enum knx_led_mode mode)
 {
-	if (override_active) {
-		return override_mode == mode;
+	return (unsigned int)mode < KNX_LED_MODE_COUNT;
+}
+
+static struct knx_leds_animation *animation_get(enum knx_led_mode mode)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(animations); i++) {
+		if (animations[i].mode == mode) {
+			return &animations[i];
+		}
 	}
 
-	for (uint8_t led = 0; led < KNX_LEDS_COUNT; led++) {
-		if (led_mode[led] == mode) {
+	return NULL;
+}
+
+static enum knx_led_mode effective_mode_locked(uint8_t led)
+{
+	if (override_active) {
+		return (override_leds & BIT(led)) ? override_mode : KNX_LED_OFF;
+	}
+
+	return led_mode[led];
+}
+
+static bool mode_in_use_locked(enum knx_led_mode mode)
+{
+	for (size_t led = 0; led < KNX_LEDS_COUNT; led++) {
+		if (effective_mode_locked(led) == mode) {
 			return true;
 		}
 	}
@@ -42,17 +78,19 @@ static bool has_mode_locked(enum knx_led_mode mode)
 	return false;
 }
 
-static bool is_lit_locked(enum knx_led_mode mode)
+static bool led_is_lit_locked(uint8_t led)
 {
+	enum knx_led_mode mode = effective_mode_locked(led);
+	const struct knx_leds_animation *animation;
+
 	switch (mode) {
+	case KNX_LED_OFF:
+		return false;
 	case KNX_LED_ON:
 		return true;
-	case KNX_LED_BLINK:
-		return blink_phase;
-	case KNX_LED_FLASH:
-		return flash_phase;
 	default:
-		return false;
+		animation = animation_get(mode);
+		return animation != NULL && animation->phase;
 	}
 }
 
@@ -60,12 +98,11 @@ static bool render_locked(void)
 {
 	bool success = true;
 
-	for (uint8_t led = 0; led < KNX_LEDS_COUNT; led++) {
-		enum knx_led_mode mode = override_active ? override_mode : led_mode[led];
-		int err = dk_set_led(led, is_lit_locked(mode));
+	for (size_t led = 0; led < KNX_LEDS_COUNT; led++) {
+		int err = dk_set_led(led, led_is_lit_locked(led));
 
 		if (err) {
-			LOG_ERR("Failed to set LED %u: %d", led, err);
+			LOG_ERR("Failed to set LED %zu: %d", led, err);
 			success = false;
 		}
 	}
@@ -73,56 +110,47 @@ static bool render_locked(void)
 	return success;
 }
 
-static k_timeout_t flash_delay_locked(void)
+static void animation_stop_locked(struct knx_leds_animation *animation)
 {
-	return K_MSEC(flash_phase ? FLASH_ON_MS : FLASH_PERIOD_MS - FLASH_ON_MS);
+	animation->active = false;
+	animation->phase = false;
+	(void)k_work_cancel_delayable(&animation->work);
 }
 
 static void update_locked(void)
 {
-	bool rendered = render_locked();
+	for (size_t i = 0; i < ARRAY_SIZE(animations); i++) {
+		struct knx_leds_animation *animation = &animations[i];
 
-	if (rendered && has_mode_locked(KNX_LED_BLINK)) {
-		k_work_schedule(&blink_work, K_MSEC(BLINK_PERIOD_MS));
-	} else {
-		k_work_cancel_delayable(&blink_work);
-		blink_phase = false;
-	}
-
-	if (rendered && has_mode_locked(KNX_LED_FLASH)) {
-		k_work_schedule(&flash_work, K_NO_WAIT);
-	} else {
-		k_work_cancel_delayable(&flash_work);
-		flash_phase = false;
-	}
-}
-
-static void blink_work_handler(struct k_work *work)
-{
-	ARG_UNUSED(work);
-
-	k_mutex_lock(&lock, K_FOREVER);
-
-	if (has_mode_locked(KNX_LED_BLINK)) {
-		blink_phase = !blink_phase;
-		if (render_locked()) {
-			k_work_schedule(&blink_work, K_MSEC(BLINK_PERIOD_MS));
+		if (!mode_in_use_locked(animation->mode)) {
+			animation_stop_locked(animation);
+		} else if (!animation->active) {
+			/* Start with the LED lit for immediate feedback. */
+			animation->active = true;
+			animation->phase = true;
+			k_work_reschedule(&animation->work, K_MSEC(animation->on_ms));
 		}
 	}
 
-	k_mutex_unlock(&lock);
+	(void)render_locked();
 }
 
-static void flash_work_handler(struct k_work *work)
+static void animation_work_handler(struct k_work *work)
 {
-	ARG_UNUSED(work);
+	struct k_work_delayable *delayable = k_work_delayable_from_work(work);
+	struct knx_leds_animation *animation =
+		CONTAINER_OF(delayable, struct knx_leds_animation, work);
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	if (has_mode_locked(KNX_LED_FLASH)) {
-		flash_phase = !flash_phase;
+	if (animation->active) {
+		animation->phase = !animation->phase;
 		if (render_locked()) {
-			k_work_schedule(&flash_work, flash_delay_locked());
+			k_work_reschedule(&animation->work,
+					  K_MSEC(animation->phase ? animation->on_ms
+								  : animation->off_ms));
+		} else {
+			animation->active = false;
 		}
 	}
 
@@ -138,15 +166,16 @@ int knx_leds_init(void)
 		return err;
 	}
 
-	k_work_init_delayable(&blink_work, blink_work_handler);
-	k_work_init_delayable(&flash_work, flash_work_handler);
+	for (size_t i = 0; i < ARRAY_SIZE(animations); i++) {
+		k_work_init_delayable(&animations[i].work, animation_work_handler);
+	}
 
 	return 0;
 }
 
 void knx_leds_set(uint8_t led, enum knx_led_mode mode)
 {
-	if (led >= KNX_LEDS_COUNT || (unsigned int)mode > KNX_LED_FLASH) {
+	if (led >= KNX_LEDS_COUNT || !mode_is_valid(mode)) {
 		LOG_ERR("Invalid LED state: led=%u, mode=%d", led, mode);
 		return;
 	}
@@ -157,17 +186,21 @@ void knx_leds_set(uint8_t led, enum knx_led_mode mode)
 	k_mutex_unlock(&lock);
 }
 
-void knx_leds_override(enum knx_led_mode mode)
+void knx_leds_override(uint32_t leds, enum knx_led_mode mode)
 {
-	if ((unsigned int)mode > KNX_LED_FLASH) {
-		LOG_ERR("Invalid LED override mode: %d", mode);
+	if ((leds & ~BIT_MASK(KNX_LEDS_COUNT)) != 0U || !mode_is_valid(mode)) {
+		LOG_ERR("Invalid LED override: leds=0x%x, mode=%d", leds, mode);
 		return;
 	}
 
 	k_mutex_lock(&lock, K_FOREVER);
 	override_active = true;
+	override_leds = leds;
 	override_mode = mode;
-	blink_phase = false;
+	/* Restart the patterns so the override starts in a known phase. */
+	for (size_t i = 0; i < ARRAY_SIZE(animations); i++) {
+		animation_stop_locked(&animations[i]);
+	}
 	update_locked();
 	k_mutex_unlock(&lock);
 }

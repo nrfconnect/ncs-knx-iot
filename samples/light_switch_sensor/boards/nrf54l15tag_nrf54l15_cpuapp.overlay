@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+/ {
+	aliases {
+		knx-ui-rgb-led = &rgb_led_1;
+	};
+};
+
+/* The on-board sensors are not used by this sample. */
+&bme688 {
+	status = "disabled";
+};
+
+&adxl367 {
+	status = "disabled";
+};
+
+&bmi270 {
+	status = "disabled";
+};
+
+&i2c21 {
+	status = "disabled";
+};
+
+&spi22 {
+	status = "disabled";
+};

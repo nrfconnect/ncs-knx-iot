@@ -4,14 +4,22 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
  */
 
+/*
+ * Generic board UI engine. Derives the UI state from the Thread and KNX
+ * state, renders it on the LEDs, and dispatches button gestures to actions,
+ * all according to the layout selected by Kconfig (knx_ui_layout.h).
+ */
+
 #include <knx/knx_board.h>
 #include <knx/knx_buttons.h>
 #include <knx/knx_leds.h>
 #include <knx/knx_transport.h>
 
-#include <dk_buttons_and_leds.h>
+#include "knx_ui_layout.h"
+
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/sys/atomic.h>
 #include <zephyr/sys/util.h>
 
 #include "oc_core_res.h"
@@ -19,170 +27,227 @@
 
 LOG_MODULE_REGISTER(knx_board, LOG_LEVEL_INF);
 
-#define THREAD_BUTTON_MASK DK_BTN1_MSK
-#define KNX_BUTTON_MASK	   DK_BTN2_MSK
-#define APP_BUTTON_MASK	   (DK_BTN3_MSK | DK_BTN4_MSK)
-
-#define FACTORY_RESET_TRIGGER_MS 3000
-#define FACTORY_RESET_CANCEL_MS	 3000
-
-enum board_led {
-	LED_THREAD_STATUS,
-	LED_KNX_STATUS,
-	LED_APP_1,
-	LED_APP_2,
-};
+#define LONG_PRESS_MS	 3000
+#define CANCEL_WINDOW_MS 3000
 
 static knx_board_app_button_handler_t app_button_handler;
 static struct knx_board_system_handlers system_handlers;
+static atomic_t ui_state = ATOMIC_INIT(KNX_UI_STATE_DOWN);
+/* LEDs used by any state indication. */
+static uint32_t status_leds;
+/* Binding resolved at press time, held until the press completes. */
+static const struct knx_ui_binding *pressed_binding[KNX_BUTTONS_COUNT];
 
-static enum knx_led_mode net_state_to_mode(enum knx_network_state state)
+static const char *action_name(enum knx_ui_action action)
 {
-	switch (state) {
-	case KNX_NETWORK_ATTACHED:
-		return KNX_LED_ON;
-	case KNX_NETWORK_ATTACHING:
-		return KNX_LED_BLINK;
+	switch (action) {
+	case KNX_UI_ACTION_THREAD_JOIN:
+		return "Thread join";
+	case KNX_UI_ACTION_THREAD_FACTORY_RESET:
+		return "Thread factory reset";
+	case KNX_UI_ACTION_KNX_PROGRAMMING_MODE:
+		return "KNX programming mode";
+	case KNX_UI_ACTION_KNX_FACTORY_RESET:
+		return "KNX factory reset";
+	case KNX_UI_ACTION_APP_BUTTON_1:
+		return "Application button 1";
+	case KNX_UI_ACTION_APP_BUTTON_2:
+		return "Application button 2";
 	default:
-		return KNX_LED_OFF;
+		return "None";
 	}
 }
 
-#if defined(CONFIG_KNX_ETS_COMMISSIONING)
-static bool knx_is_programmed(void)
+static knx_board_system_button_handler_t system_handler_get(enum knx_ui_action action)
 {
-	return oc_core_get_device_info()->ia != 0xFFFF;
+	switch (action) {
+	case KNX_UI_ACTION_THREAD_JOIN:
+		return system_handlers.thread_joiner;
+	case KNX_UI_ACTION_THREAD_FACTORY_RESET:
+		return system_handlers.thread_factory_reset;
+	case KNX_UI_ACTION_KNX_PROGRAMMING_MODE:
+		return system_handlers.programming_mode;
+	case KNX_UI_ACTION_KNX_FACTORY_RESET:
+		return system_handlers.knx_factory_reset;
+	default:
+		return NULL;
+	}
 }
+
+static bool app_button_get(enum knx_ui_action action, enum knx_board_app_button *button)
+{
+	switch (action) {
+	case KNX_UI_ACTION_APP_BUTTON_1:
+		*button = KNX_BOARD_APP_BUTTON_1;
+		return true;
+	case KNX_UI_ACTION_APP_BUTTON_2:
+		*button = KNX_BOARD_APP_BUTTON_2;
+		return true;
+	default:
+		return false;
+	}
+}
+
+static bool action_is_available(enum knx_ui_action action)
+{
+	enum knx_board_app_button button;
+
+	if (app_button_get(action, &button)) {
+		return app_button_handler != NULL;
+	}
+
+	return system_handler_get(action) != NULL;
+}
+
+static void action_run(enum knx_ui_action action)
+{
+	enum knx_board_app_button button;
+	knx_board_system_button_handler_t handler;
+
+	if (app_button_get(action, &button)) {
+		if (app_button_handler != NULL) {
+			app_button_handler(button);
+		}
+		return;
+	}
+
+	handler = system_handler_get(action);
+	if (handler != NULL) {
+		handler();
+	}
+}
+
+static const struct knx_ui_binding *binding_find(uint8_t button, enum knx_ui_state state)
+{
+	for (size_t i = 0; i < knx_ui_layout.num_bindings; i++) {
+		const struct knx_ui_binding *binding = &knx_ui_layout.bindings[i];
+
+		if (binding->button == button && (binding->states & BIT(state))) {
+			return binding;
+		}
+	}
+
+	return NULL;
+}
+
+static bool on_button_press(uint8_t button)
+{
+	const struct knx_ui_binding *binding =
+		binding_find(button, (enum knx_ui_state)atomic_get(&ui_state));
+
+	pressed_binding[button] = binding;
+
+	return binding != NULL && action_is_available(binding->long_action);
+}
+
+static void on_button_event(uint8_t button, enum knx_button_event event)
+{
+	const struct knx_ui_binding *binding = pressed_binding[button];
+	const struct knx_ui_indication *armed = &knx_ui_layout.long_press_armed;
+
+	if (binding == NULL) {
+		return;
+	}
+
+	switch (event) {
+	case KNX_BUTTON_SHORT:
+		action_run(binding->short_action);
+		break;
+	case KNX_BUTTON_ARM:
+		LOG_INF("%s armed. Release button within %u ms to cancel.",
+			action_name(binding->long_action), CANCEL_WINDOW_MS);
+		knx_leds_override(armed->leds, armed->mode);
+		break;
+	case KNX_BUTTON_CANCEL:
+		LOG_INF("%s canceled", action_name(binding->long_action));
+		knx_leds_clear_override();
+		break;
+	case KNX_BUTTON_CONFIRM:
+		knx_leds_clear_override();
+		action_run(binding->long_action);
+		break;
+	}
+}
+
+static enum knx_ui_state ui_state_derive(void)
+{
+	switch (knx_get_network_state()) {
+	case KNX_NETWORK_ATTACHED:
+		break;
+	case KNX_NETWORK_ATTACHING:
+		return KNX_UI_STATE_ATTACHING;
+	default:
+		return KNX_UI_STATE_DOWN;
+	}
+
+#if defined(CONFIG_KNX_ETS_COMMISSIONING)
+	bool programming = oc_knx_device_in_programming_mode();
+
+	if (oc_core_get_device_info()->ia != 0xFFFF) {
+		return programming ? KNX_UI_STATE_COMMISSIONED_PM : KNX_UI_STATE_COMMISSIONED;
+	}
+
+	return programming ? KNX_UI_STATE_ATTACHED_PM : KNX_UI_STATE_ATTACHED;
+#else
+	return KNX_UI_STATE_COMMISSIONED;
 #endif
+}
+
+static void status_render(enum knx_ui_state state)
+{
+	const struct knx_ui_indication *indications = knx_ui_layout.indications[state];
+
+	for (size_t led = 0; led < KNX_LEDS_COUNT; led++) {
+		enum knx_led_mode mode = KNX_LED_OFF;
+
+		if (!(status_leds & BIT(led))) {
+			continue;
+		}
+
+		for (size_t i = 0; i < KNX_UI_MAX_INDICATIONS; i++) {
+			if (indications[i].leds & BIT(led)) {
+				mode = indications[i].mode;
+				break;
+			}
+		}
+
+		knx_leds_set(led, mode);
+	}
+}
 
 void knx_board_update_status(void)
 {
-	enum knx_network_state net = knx_get_network_state();
+	enum knx_ui_state state = ui_state_derive();
 
-	knx_leds_set(LED_THREAD_STATUS, net_state_to_mode(net));
-
-	/* KNX is reachable only once the network is attached. */
-	if (net != KNX_NETWORK_ATTACHED) {
-		knx_leds_set(LED_KNX_STATUS, KNX_LED_OFF);
-		return;
-	}
-
-#if defined(CONFIG_KNX_ETS_COMMISSIONING)
-	if (oc_knx_device_in_programming_mode()) {
-		knx_leds_set(LED_KNX_STATUS, KNX_LED_BLINK);
-	} else {
-		knx_leds_set(LED_KNX_STATUS, knx_is_programmed() ? KNX_LED_ON : KNX_LED_OFF);
-	}
-#else
-	knx_leds_set(LED_KNX_STATUS, KNX_LED_ON);
-#endif
+	atomic_set(&ui_state, state);
+	status_render(state);
 }
-
-static void on_app_button(uint8_t button)
-{
-	if (app_button_handler == NULL) {
-		return;
-	}
-
-	if (BIT(button) == DK_BTN3_MSK) {
-		app_button_handler(KNX_BOARD_APP_BUTTON_1);
-	} else if (BIT(button) == DK_BTN4_MSK) {
-		app_button_handler(KNX_BOARD_APP_BUTTON_2);
-	}
-}
-
-static void on_thread_joiner_request(void)
-{
-	if (system_handlers.thread_joiner != NULL) {
-		system_handlers.thread_joiner();
-	}
-}
-
-static void on_thread_factory_reset_warning(void)
-{
-	LOG_INF("Thread factory reset armed. Release button within %u ms to cancel.",
-		FACTORY_RESET_CANCEL_MS);
-	knx_leds_override(KNX_LED_BLINK);
-}
-
-static void on_factory_reset_cancel(void)
-{
-	LOG_INF("Factory reset canceled");
-	knx_leds_clear_override();
-}
-
-static void on_thread_factory_reset_execute(void)
-{
-	knx_leds_clear_override();
-	if (system_handlers.thread_factory_reset != NULL) {
-		system_handlers.thread_factory_reset();
-	}
-}
-
-#if defined(CONFIG_KNX_ETS_COMMISSIONING)
-static void on_programming_mode_request(void)
-{
-	if (system_handlers.programming_mode != NULL) {
-		system_handlers.programming_mode();
-	}
-}
-
-static void on_knx_factory_reset_warning(void)
-{
-	LOG_INF("KNX factory reset armed. Release button within %u ms to cancel.",
-		FACTORY_RESET_CANCEL_MS);
-	knx_leds_override(KNX_LED_BLINK);
-}
-
-static void on_knx_factory_reset_execute(void)
-{
-	knx_leds_clear_override();
-	if (system_handlers.knx_factory_reset != NULL) {
-		system_handlers.knx_factory_reset();
-	}
-}
-#endif
-
-static const struct knx_system_button system_buttons[] = {
-	{
-		.mask = THREAD_BUTTON_MASK,
-		.long_press_ms = FACTORY_RESET_TRIGGER_MS,
-		.cancel_window_ms = FACTORY_RESET_CANCEL_MS,
-		.on_short = on_thread_joiner_request,
-		.on_arm = on_thread_factory_reset_warning,
-		.on_cancel = on_factory_reset_cancel,
-		.on_confirm = on_thread_factory_reset_execute,
-	},
-#if defined(CONFIG_KNX_ETS_COMMISSIONING)
-	{
-		.mask = KNX_BUTTON_MASK,
-		.long_press_ms = FACTORY_RESET_TRIGGER_MS,
-		.cancel_window_ms = FACTORY_RESET_CANCEL_MS,
-		.on_short = on_programming_mode_request,
-		.on_arm = on_knx_factory_reset_warning,
-		.on_cancel = on_factory_reset_cancel,
-		.on_confirm = on_knx_factory_reset_execute,
-	},
-#endif
-};
 
 int knx_board_init(void)
 {
-	int err = knx_leds_init();
+	const struct knx_buttons_config buttons_config = {
+		.long_press_ms = LONG_PRESS_MS,
+		.cancel_window_ms = CANCEL_WINDOW_MS,
+		.on_press = on_button_press,
+		.on_event = on_button_event,
+	};
+	int err;
 
+	status_leds = 0U;
+	for (size_t state = 0; state < KNX_UI_STATE_COUNT; state++) {
+		for (size_t i = 0; i < KNX_UI_MAX_INDICATIONS; i++) {
+			status_leds |= knx_ui_layout.indications[state][i].leds;
+		}
+	}
+
+	err = knx_leds_init();
 	if (err) {
 		return err;
 	}
 
-	err = knx_buttons_init();
+	err = knx_buttons_init(&buttons_config);
 	if (err) {
-		return err;
-	}
-
-	knx_buttons_set_application_button_callback(APP_BUTTON_MASK, on_app_button);
-	err = knx_buttons_set_system_buttons(system_buttons, ARRAY_SIZE(system_buttons));
-	if (err) {
-		LOG_ERR("Failed to configure function buttons: %d", err);
+		LOG_ERR("Failed to initialize buttons: %d", err);
 		return err;
 	}
 
@@ -196,21 +261,12 @@ void knx_board_set_app_led(enum knx_board_app_led led, bool on)
 
 void knx_board_set_app_led_mode(enum knx_board_app_led led, enum knx_led_mode mode)
 {
-	enum board_led board_led;
-
-	switch (led) {
-	case KNX_BOARD_APP_LED_1:
-		board_led = LED_APP_1;
-		break;
-	case KNX_BOARD_APP_LED_2:
-		board_led = LED_APP_2;
-		break;
-	default:
-		LOG_ERR("Invalid application LED: %d", led);
+	if ((size_t)led >= knx_ui_layout.num_app_leds) {
+		LOG_DBG("Application LED %d is not available in this layout", led);
 		return;
 	}
 
-	knx_leds_set(board_led, mode);
+	knx_leds_set(knx_ui_layout.app_leds[led], mode);
 }
 
 void knx_board_set_app_button_handler(knx_board_app_button_handler_t handler)

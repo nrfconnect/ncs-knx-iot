@@ -5,14 +5,10 @@
  */
 
 /*
- * Board UI mapping for the KNX samples:
- *
- *   LED 0  Thread status             LED 1  KNX status
- *   LED 2  application output 1      LED 3  application output 2
- *   Button 0  Thread actions         Button 1  KNX actions
- *   Button 2  application input 1    Button 3  application input 2
- *
- * Button 1 is active only with CONFIG_KNX_ETS_COMMISSIONING.
+ * Board UI for the KNX samples. How the device state is shown on the LEDs and
+ * which button gestures trigger Thread, KNX, and application actions is
+ * defined by the layout selected with the KNX_UI_LAYOUT Kconfig choice.
+ * Application buttons and LEDs that a layout does not provide are unused.
  */
 
 #ifndef KNX_BOARD_H_
@@ -63,8 +59,7 @@ struct knx_board_system_handlers {
 };
 
 /**
- * @brief Bring up the DK LEDs and buttons.
- *
+ * @brief Bring up the board LEDs and buttons.
  *
  * @return 0 on success, negative errno on failure.
  */
@@ -81,6 +76,8 @@ void knx_board_update_status(void);
 /**
  * @brief Drive an application output LED.
  *
+ * Does nothing if the layout provides no such LED.
+ *
  * @param led Application LED identifier.
  * @param on  true to switch the LED on, false to switch it off.
  */
@@ -88,6 +85,8 @@ void knx_board_set_app_led(enum knx_board_app_led led, bool on);
 
 /**
  * @brief Set the display mode of an application output LED.
+ *
+ * Does nothing if the layout provides no such LED.
  *
  * @param led  Application LED identifier.
  * @param mode Mode to display.
