@@ -51,6 +51,12 @@ The following serial numbers identify the devices:
    * - Sensor
      - ``00fa10020700``
 
+The serial number is set with the :option:`CONFIG_KNX_SERIAL_NUMBER` Kconfig option.
+ETS identifies devices by serial number, so if you add more than one device of the same sample to the ETS project, set a unique serial number for each of them.
+
+You can also use the nRF54L15 TAG for the sensor.
+The TAG has a single button and an RGB LED, for its user interface, see the :ref:`knx_iot_light_switch_sensor_sample` page.
+
 Program the samples
 *******************
 
@@ -150,6 +156,15 @@ After commissioning both devices, test the interaction between them:
 #. Press **Button 2** on the sensor again to turn off the actuator's **LED 2**.
 #. If you linked the second channel in ETS, repeat the previous steps with **Button 3** on the sensor and **LED 3** on the actuator.
 
+The actuator stores the light state and restores it after a reboot.
+
+.. note::
+   In installations with more devices, a restarted device can also read the current light state from the group.
+   To enable this, set the Read on Init (I), Write (W), and Update (U) flags in ETS on the group object that should be updated at startup, for example the status group object of the sensor.
+   The I flag sends the read request at startup, and the W and U flags let the response update the value.
+   The read request is answered only by a device whose group object on the same group address has the Read (R) flag set, for example the status group object of an actuator.
+   If no device answers, the actuator keeps its stored light state.
+
 Next steps
 **********
 
@@ -164,7 +179,9 @@ After you complete this quick start guide, we recommend that you get familiar wi
 
 * If you want to start configuring the samples:
 
-  * Alternative Thread and KNX commissioning profiles, and the power-optimized release build - see the :ref:`knx_iot_light_switch_actuator_sample` and :ref:`knx_iot_light_switch_sensor_sample` pages.
+  * Alternative Thread and KNX commissioning profiles - see :ref:`knx_iot_addon_commissioning`.
+  * The power-optimized release build - see the :ref:`knx_iot_light_switch_actuator_sample` and :ref:`knx_iot_light_switch_sensor_sample` pages.
   * :ref:`knx_iot_config`
 
 * If you want to learn how the |addon| integrates the KNX IoT stack, see :ref:`knx_iot_addon`.
+* If you want to develop your own application, see :ref:`knx_iot_developing`.

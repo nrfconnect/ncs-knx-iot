@@ -107,7 +107,7 @@ digraph knx_iot_component_overview {
                             <TR><TD WIDTH="210" HEIGHT="8" FIXEDSIZE="TRUE"></TD></TR>
                             <TR><TD ALIGN="CENTER">
                                 <TABLE BORDER="0" BGCOLOR="#71D0E3" STYLE="rounded" CELLPADDING="4" WIDTH="210">
-                                    <TR><TD ALIGN="CENTER" WIDTH="210"><FONT COLOR="#004F5E" POINT-SIZE="10">Nordic SoC (nRF54L15 / nRF54LM20A/B)</FONT></TD></TR>
+                                    <TR><TD ALIGN="CENTER" WIDTH="210"><FONT COLOR="#004F5E" POINT-SIZE="10">Nordic SoC (nRF54L Series)</FONT></TD></TR>
                                 </TABLE>
                             </TD></TR>
                         </TABLE>

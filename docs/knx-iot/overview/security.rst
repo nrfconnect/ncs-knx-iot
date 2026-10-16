@@ -24,7 +24,7 @@ An OSCORE security context is identified independently of the device's IPv6 addr
    Group (multicast) S-Mode messages are protected with a *group* OSCORE context shared by all members of the group.
    In the :ref:`knx_iot_samples`, ETS provides this context during commissioning.
    A hardcoded context is also available for development.
-   See :ref:`knx_iot_commissioning` for more information.
+   See :ref:`knx_iot_addon_commissioning` for more information.
 
 .. _knx_iot_security_pase_spake2:
 

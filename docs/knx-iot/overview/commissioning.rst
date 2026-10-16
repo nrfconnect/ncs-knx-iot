@@ -8,8 +8,11 @@ Commissioning
    :depth: 2
 
 *Commissioning* is the process of turning a factory-fresh device into a configured member of a KNX installation: giving it an identity, telling it which groups it belongs to, and installing the security material it needs.
-This page explains the standard KNX IoT commissioning flow and the commissioning methods supported by the |addon|.
+This page explains the standard KNX IoT commissioning flow.
 For more information, see `KNX IoT device bootstrapping`_.
+
+.. note::
+   For how the |addon| implements commissioning, including Thread commissioning, ETS commissioning, and the development-only hardcoded commissioning, see :ref:`knx_iot_addon_commissioning`.
 
 The Management and Commissioning Client
 ***************************************
@@ -25,6 +28,10 @@ Standard commissioning flow
 ***************************
 
 Standard KNX IoT commissioning runs over OSCORE-secured CoAP and is usually split into two parts, as described in `KNX IoT device bootstrapping`_.
+
+Before commissioning can start, the device must be connected to an IPv6 network, such as Thread, Wi-Fi, or Ethernet, through which the MaC can discover and reach it.
+Connecting the device to that network is not part of KNX IoT commissioning.
+On Thread, for example, it is handled by Thread commissioning.
 
 Part 1: Individualization
 =========================
@@ -48,43 +55,3 @@ Using the tool-key session, the MaC downloads the actual configuration:
 #. **Tables and parameters** - The MaC writes the function point tables (``/fp/g``, ``/fp/r``, ``/fp/p``; see :ref:`knx_iot_group_communication`) and application parameters.
 #. **Security material** - The MaC installs the access tokens and keys the device needs for group communication (see :ref:`knx_iot_security`).
 #. **Loaded** - The device transitions to the loaded state and begins normal operation.
-
-Commissioning in the |addon|
-****************************
-
-The samples use `ETS tool`_ commissioning by default.
-ETS can identify an uncommissioned sample by its serial number without programming mode.
-Programming mode is not enabled automatically; it can be enabled with the corresponding board button or from the shell.
-For step-by-step instructions, see the :ref:`knx_iot_quickstart`.
-
-For development and demonstration without ETS, the |addon| also provides *hardcoded commissioning*, enabled with the :option:`CONFIG_KNX_HARDCODED_COMMISSIONING` Kconfig option.
-
-When enabled, a device applies a fixed commissioning profile on boot instead of receiving it from a MaC.
-The profile includes:
-
-* The device's Individual Address.
-* The group object, recipient, and publisher tables for a single shared group.
-* A shared group OSCORE key, so devices can exchange protected S-Mode messages without a PASE handshake.
-
-When hardcoded commissioning is enabled, these shared parameters (group address ``1/1/1`` and the group OSCORE key) are defined in :file:`samples/common/knx_hardcoded.h` and must be identical on every device that communicates.
-This lets two development kits exchange KNX messages without a MaC client.
-
-.. note::
-   Hardcoded commissioning is intended for development and demonstration only.
-   It is not a substitute for standard, secure commissioning in a real installation.
-
-Thread commissioning
-********************
-
-KNX commissioning and Thread commissioning are configured independently.
-By default, the samples use Thread Joiner commissioning.
-
-For development without a Commissioner, the samples provide two options for Thread Out-of-band commissioning enabled by including an additional configuration file:
-
-  #. :file:`samples/common/overlay-thread-hardcoded.conf` automatically starts Thread with a predefined network data.
-  #. :file:`samples/common/overlay-thread-otshell.conf` disables automatic Joiner startup and allows the Thread dataset to be configured manually from the OpenThread shell.
-
-See the :ref:`knx_iot_samples` for build instructions and the :ref:`knx_iot_quickstart` for step-by-step instructions.
-
-In ETS-based installations, a manufacturer-specific Thread Border Router Device Configuration App configures the Thread Border Router, the Thread subsystem, and device assignment to the Thread network.
-This is not yet supported by the |addon|.
