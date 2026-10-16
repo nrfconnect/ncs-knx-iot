@@ -500,12 +500,10 @@ int knx_app_start(void)
 	knx_datapoints_load();
 
 #if defined(CONFIG_KNX_HARDCODED_COMMISSIONING)
-	if (dev->preset != NULL) {
-		ret = knx_apply_presets(dev->preset);
-		if (ret < 0) {
-			LOG_ERR("Failed to apply KNX presets: %d", ret);
-			return ret;
-		}
+	ret = knx_apply_presets(&knx_hardcoded_preset);
+	if (ret < 0) {
+		LOG_ERR("Failed to apply KNX presets: %d", ret);
+		return ret;
 	}
 #endif
 

@@ -15,26 +15,27 @@
 extern "C" {
 #endif
 
+/* Group Object Table entry of a preset. */
+struct knx_preset_group_object {
+	const char *href; /* bound resource, e.g. "/p/lsab/0/soo" */
+	uint32_t ga;	  /* group address */
+	uint32_t cflags;  /* oc_cflag_mask_t value (OC_CFLAG_WRITE / _TRANSMISSION) */
+};
+
 /*
  * Parameters for hardcoded "automatic" commissioning.
  *
- * The shared fabric (fid/iid/ga/grpid and the group key material) must be
- * identical on every device that talks to each other.
+ * The shared fabric (fid/iid/grpid, the group addresses and the group key
+ * material) must be identical on every device that talks to each other.
  */
 struct knx_preset {
 	uint64_t fid;
 	uint64_t iid;
-	uint32_t ga;
 	uint32_t grpid;
 	int32_t ia;
 
-	/*This defines a single Group Object Table (got) (for simplicity in this
-	 * hardcoded commissioning), therefore in this hardcoded configuration, only
-	 * one datapoint can be used)*/
-	const char *got_href; /* bound resource, e.g. "/p/lsab/0/soo" */
-	uint32_t got_cflags;  /* oc_cflag_mask_t value (OC_CFLAG_WRITE / _TRANSMISSION) */
-	bool is_publisher;    /* true: publisher table (receive); false: recipient table
-				 (transmit) */
+	const struct knx_preset_group_object *group_objects;
+	size_t num_group_objects;
 
 	const uint8_t *group_ms; /* group OSCORE master secret */
 	size_t group_ms_len;
@@ -43,6 +44,9 @@ struct knx_preset {
 };
 
 typedef struct knx_preset knx_preset_t;
+
+/* Defined by the application when CONFIG_KNX_HARDCODED_COMMISSIONING is set. */
+extern const knx_preset_t knx_hardcoded_preset;
 
 /**
  * @brief Apply a hardcoded commissioning preset.

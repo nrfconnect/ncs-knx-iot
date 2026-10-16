@@ -16,10 +16,6 @@
 #include <knx/knx_app.h>
 #include <knx/knx_board.h>
 #include <knx/knx_device.h>
-#if defined(CONFIG_KNX_HARDCODED_COMMISSIONING)
-#include "knx_hardcoded.h"
-#include <knx/knx_presets.h>
-#endif
 
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
@@ -156,24 +152,6 @@ static const knx_functional_block_t actuator_blocks[] = {
 	 .num_datapoints = NUM_POINTS},
 };
 
-#if defined(CONFIG_KNX_HARDCODED_COMMISSIONING)
-/* Actuator: individual address 1.1.1, receives writes on the shared GA. */
-static const knx_preset_t actuator_preset = {
-	.fid = KNX_HC_FID,
-	.iid = KNX_HC_IID,
-	.ga = KNX_HC_GA,
-	.grpid = KNX_HC_GRPID,
-	.ia = 0x1101,
-	.got_href = "/p/lsab/0/soo",
-	.got_cflags = OC_CFLAG_WRITE,
-	.is_publisher = true,
-	.group_ms = knx_hc_group_ms,
-	.group_ms_len = sizeof(knx_hc_group_ms),
-	.group_kid = knx_hc_group_kid,
-	.group_kid_len = sizeof(knx_hc_group_kid),
-};
-#endif
-
 static bool actuator_is_state(const knx_datapoint_t *dp)
 {
 	return !KNX_DP_IS_PARAMETER(dp->id) && KNX_DP_CHANNEL(dp->id) < NUM_CHANNELS &&
@@ -225,11 +203,6 @@ static const knx_device_t actuator_device = {
 	.on_ready = NULL,
 	.on_write = actuator_on_write,
 	.on_init_read = actuator_on_init_read,
-#if defined(CONFIG_KNX_HARDCODED_COMMISSIONING)
-	.preset = &actuator_preset,
-#else
-	.preset = NULL,
-#endif
 };
 
 void app_register_device(void)

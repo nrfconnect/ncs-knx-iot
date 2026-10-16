@@ -90,13 +90,24 @@ BUILD_ASSERT(sizeof(CONFIG_KNX_SERIAL_NUMBER) == SERIAL_NUM_SIZE + 1,
 static int knx_stack_init_device(void)
 {
 	const knx_identity_t *id = knx_device_get()->identity;
+	const char *serial_number = id->serialnumber;
 
 	oc_knx_version_info_t hw_version = {.major = 0, .minor = 0, .patch = 1};
 	oc_knx_version_info_t fw_version = {.major = 0, .minor = 0, .patch = 1};
 	oc_knx_version_info_t app_version = {.major = 1, .minor = 0, .patch = 0};
 
+#if defined(CONFIG_KNX_HARDCODED_IDENTITY_HWINFO)
+	int ret = knx_identity_hwinfo_init(id->serialnumber);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	serial_number = knx_identity_hwinfo_serial_number();
+#endif
+
 	/* Permanent identity. */
-	oc_core_set_device_sn(id->serialnumber);
+	oc_core_set_device_sn(serial_number);
 	oc_core_set_device_hwv(&hw_version);
 	oc_core_set_and_store_device_fwv(&fw_version);
 
@@ -109,7 +120,7 @@ static int knx_stack_init_device(void)
 	oc_core_set_and_store_device_application_version(&app_version);
 
 	char hname[HNAME_SIZE];
-	(void)snprintf(hname, HNAME_SIZE, HNAME_TYPE, id->serialnumber);
+	(void)snprintf(hname, HNAME_SIZE, HNAME_TYPE, serial_number);
 	oc_core_set_device_hostname(hname);
 
 	return 0;

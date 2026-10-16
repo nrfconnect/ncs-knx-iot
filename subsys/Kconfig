@@ -55,6 +55,33 @@ config KNX_HARDCODED_COMMISSIONING
 
 endchoice
 
+choice KNX_HARDCODED_IDENTITY
+	prompt "Hardcoded commissioning device identity"
+	depends on KNX_HARDCODED_COMMISSIONING
+	default KNX_HARDCODED_IDENTITY_HWINFO
+	help
+	  Select where a device with hardcoded commissioning takes its serial
+	  number and Individual Address from. The serial number must be unique
+	  within the setup, because it forms the DNS-SD hostname and the
+	  OSCORE ID Context of the device's group messages.
+
+config KNX_HARDCODED_IDENTITY_FIXED
+	bool "Fixed identity"
+	help
+	  Use KNX_SERIAL_NUMBER and the Individual Address of the device's
+	  hardcoded preset. Every device of the setup needs its own build.
+
+config KNX_HARDCODED_IDENTITY_HWINFO
+	bool "Identity derived from the hardware device ID"
+	select HWINFO
+	help
+	  Keep the manufacturer ID (the first four characters) of
+	  KNX_SERIAL_NUMBER and fill the remaining eight characters with 32
+	  bits of the hardware device ID. The Individual Address is derived
+	  from the same bits, so one build serves every device of a role.
+
+endchoice
+
 config KNX_IOT_PASSWORD
 	string "KNX IoT SPAKE2+ password"
 	default "2X4W3TE0DFLLS19Y1FCH"

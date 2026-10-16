@@ -11,7 +11,7 @@
  * as well as by the sample-level logic.
  * The structure is the following:
  * The knx_device_t is the top level, it houses the identity of the device,
- * application parameters, functional blocks, callbacks and optional presets.
+ * application parameters, functional blocks and callbacks.
  *
  * Functional blocks are standard defined, for example FB number 417 is LSAB
  * (Light Switch Actuator Basic) (Kind of like a Matter Cluster) They consist of
@@ -143,8 +143,6 @@ typedef void (*knx_init_read_cb_t)(const knx_datapoint_t *dp, bool received);
 /* Generic lifecycle hook. (on_init, on_ready etc.) */
 typedef void (*knx_lifecycle_cb_t)(void);
 
-struct knx_preset; /* defined in knx_presets.h */
-
 typedef struct {
 	const knx_identity_t *identity;
 
@@ -160,8 +158,6 @@ typedef struct {
 	knx_write_cb_t on_write;     /* after a PUT or factory reset (KNX thread) */
 	knx_init_read_cb_t
 		on_init_read; /* read-on-init finished waiting for a datapoint value (KNX thread) */
-
-	const struct knx_preset *preset; /* hardcoded commissioning, or NULL */
 } knx_device_t;
 
 /**

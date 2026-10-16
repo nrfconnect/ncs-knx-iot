@@ -15,3 +15,4 @@ target_sources(app PRIVATE
   main.c
   knx_sensor.c
 )
+target_sources_ifdef(CONFIG_KNX_HARDCODED_COMMISSIONING app PRIVATE knx_sensor_hardcoded.c)

@@ -37,3 +37,4 @@ zephyr_library_sources_ifdef(CONFIG_DK_LIBRARY knx_board.c)
 
 # Hardcoded KNX commissioning for development.
 zephyr_library_sources_ifdef(CONFIG_KNX_HARDCODED_COMMISSIONING knx_presets.c)
+zephyr_library_sources_ifdef(CONFIG_KNX_HARDCODED_IDENTITY_HWINFO knx_identity.c)

@@ -16,10 +16,6 @@
 #include <knx/knx_app.h>
 #include <knx/knx_board.h>
 #include <knx/knx_device.h>
-#if defined(CONFIG_KNX_HARDCODED_COMMISSIONING)
-#include "knx_hardcoded.h"
-#include <knx/knx_presets.h>
-#endif
 
 #include <errno.h>
 
@@ -141,24 +137,6 @@ static const knx_functional_block_t sensor_blocks[] = {
 	 .num_datapoints = NUM_POINTS},
 };
 
-#if defined(CONFIG_KNX_HARDCODED_COMMISSIONING)
-/* Sensor: individual address 1.1.2, transmits on the shared GA. */
-static const knx_preset_t sensor_preset = {
-	.fid = KNX_HC_FID,
-	.iid = KNX_HC_IID,
-	.ga = KNX_HC_GA,
-	.grpid = KNX_HC_GRPID,
-	.ia = 0x1102,
-	.got_href = "/p/lssb/0/soo",
-	.got_cflags = OC_CFLAG_TRANSMISSION,
-	.is_publisher = false,
-	.group_ms = knx_hc_group_ms,
-	.group_ms_len = sizeof(knx_hc_group_ms),
-	.group_kid = knx_hc_group_kid,
-	.group_kid_len = sizeof(knx_hc_group_kid),
-};
-#endif
-
 /* The channel LED blinks while the status is unknown after startup, then shows
  * the reported light state as a short flash.
  */
@@ -270,11 +248,6 @@ static const knx_device_t sensor_device = {
 	.on_ready = NULL,
 	.on_write = sensor_on_status,
 	.on_init_read = sensor_on_init_read,
-#if defined(CONFIG_KNX_HARDCODED_COMMISSIONING)
-	.preset = &sensor_preset,
-#else
-	.preset = NULL,
-#endif
 };
 
 void app_register_device(void)

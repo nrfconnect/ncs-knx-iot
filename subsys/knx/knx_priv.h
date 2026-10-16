@@ -54,6 +54,13 @@ void knx_init_read_start(void);
 void knx_init_read_cancel(void);
 void knx_init_read_finish(knx_datapoint_t *dp, bool received);
 
+/* Identity derived from the hardware device ID (knx_identity.c). Init keeps the
+ * manufacturer ID of base_serial_number and must run before the getters.
+ */
+int knx_identity_hwinfo_init(const char *base_serial_number);
+const char *knx_identity_hwinfo_serial_number(void);
+int32_t knx_identity_hwinfo_ia(void);
+
 /* Helper required by compiled libknx sources (port/zephyr/knx_shell.c). */
 const char *app_get_password(void);
 
