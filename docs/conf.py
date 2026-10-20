@@ -37,6 +37,10 @@ extensions = [
     'knx_iot_kconfig',
     'options_from_kconfig',
     'sphinx.ext.graphviz',
+    'memory_data',
+    'memory_viz',
+    'memory_layout_viz',
+    'stack_viz',
 ]
 
 root_doc = 'index'
@@ -96,6 +100,11 @@ _substitutions = _read_rst_substitutions(_shortcuts_path)
 _links = _apply_substitutions(
     (DOC_BASE / 'links.txt').read_text(encoding='utf-8'),
     _substitutions,
+)
+
+_ncs_version = _substitutions.get('ncs_version', 'latest')
+kconfig_external_base_url = (
+    f'https://docs.nordicsemi.com/bundle/ncs-{_ncs_version}/page/kconfig/index.html'
 )
 
 rst_epilog = f"""{_links}

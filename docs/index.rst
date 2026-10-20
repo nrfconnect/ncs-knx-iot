@@ -23,6 +23,7 @@ To develop your own application, see :ref:`knx_iot_developing`.
    setup
    quick-start
    migration
+   memory
    knx-iot/samples
    knx-iot/developing/index
    config

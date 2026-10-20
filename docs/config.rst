@@ -10,7 +10,7 @@ Use these options to enable the KNX IoT stack, set the device identity, control 
 Configuration options
 *********************
 
-.. options-from-kconfig:: /../subsys/Kconfig
+.. options-from-kconfig:: subsys/Kconfig
    :show-type:
 
 KNX IoT stack configuration options
@@ -18,5 +18,5 @@ KNX IoT stack configuration options
 
 The KNX IoT stack provides the following Kconfig options for tuning its protocol support, table sizes, networking, security, and logging.
 
-.. options-from-kconfig:: /../../modules/lib/sdk-knx-iot-stack/zephyr/Kconfig
+.. options-from-kconfig:: ../modules/lib/sdk-knx-iot-stack/zephyr/Kconfig
    :show-type:

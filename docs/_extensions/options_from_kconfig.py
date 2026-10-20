@@ -38,8 +38,28 @@ class OptionsFromKconfig(SphinxDirective):
 
     def _resolve_kconfig_path(self) -> str:
         if self.arguments:
-            _, path = self.env.relfn2path(self.arguments[0])
-            return path
+            arg = self.arguments[0].strip()
+            base_dir = Path(self.config.options_from_kconfig_base_dir)
+            srcdir = Path(self.env.srcdir)
+
+            candidates: list[Path] = []
+            if arg.startswith('/'):
+                candidates.append((srcdir / arg.lstrip('/')).resolve())
+            else:
+                candidates.append((base_dir / arg).resolve())
+
+            _, relfn_path = self.env.relfn2path(arg)
+            candidates.append(Path(relfn_path).resolve())
+
+            for candidate in candidates:
+                if candidate.is_file():
+                    return str(candidate)
+
+            raise self.error(
+                f'Kconfig file not found for {arg!r} (expected at {candidates[0]}). '
+                'If this file comes from a west module, set WEST_UPDATE=true and '
+                'WEST_MODULES in .github/doc-addon.env.'
+            )
 
         source = self.state_machine.input_lines.source(
             self.lineno - self.state_machine.input_offset - 1

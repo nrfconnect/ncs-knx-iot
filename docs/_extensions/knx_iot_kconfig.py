@@ -17,12 +17,10 @@ _CONFIG_RE = re.compile(r'^\s*config\s+(\w+)', re.MULTILINE)
 
 
 def _is_kconfig_file(path: Path) -> bool:
-    """Return True for real Kconfig files, excluding Windows case-insensitive false positives."""
     if '__pycache__' in path.parts:
         return False
-    if path.suffix in {'.py', '.pyc'}:
-        return False
-    return path.name.startswith('Kconfig')
+    name = path.name.lower()
+    return name == 'kconfig' or name.startswith('kconfig.')
 
 
 def discover_kconfig_options(base_dir: Path) -> list[str]:
@@ -41,10 +39,13 @@ def _register_addon_options(app: Sphinx, *args) -> None:
     for option in discover_kconfig_options(base_dir):
         if any(name == option for name, *_ in domain.get_objects()):
             continue
-        domain.add_option(option)
+        domain.add_option(option, docname='config')
 
 
 def setup(app: Sphinx):
+    import kconfig_domain
+
+    kconfig_domain.setup(app)
     app.add_config_value('knx_iot_kconfig_base_dir', None, 'env')
     app.add_domain(KconfigDomain)
     app.connect('env-before-read-docs', _register_addon_options)
