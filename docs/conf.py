@@ -13,8 +13,6 @@ from pathlib import Path
 project = 'KNX IoT Add-on for the nRF Connect SDK'
 copyright = '2026, Nordic Semiconductor'
 author = 'Nordic Semiconductor'
-release = '0.1.99'
-version = '0.1.99'
 
 # Paths
 
@@ -55,6 +53,7 @@ html_theme = 'sphinx_ncs_theme'
 
 html_theme_options = {
     'docsets': {},
+    'display_version': False,
     "ncs_url": "https://nrfconnectdocs.nordicsemi.com/ncs/latest/nrf/",
     "ncs_label": "nRF Connect SDK Docs",
     "addons_url": "https://nrfconnect.github.io/ncs-app-index/",
