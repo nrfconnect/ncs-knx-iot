@@ -24,22 +24,31 @@ Follow the `Installing the nRF Connect SDK`_ instructions, with the following ex
 
       In the `Get the nRF Connect SDK code <Installing the nRF Connect SDK_>`_ section, click :guilabel:`Create a new application`.
       Select :guilabel:`Browse nRF Connect SDK Add-on Index`, then choose :guilabel:`KNX IoT`.
-      Select v\ |addon_version| of the |addon|.
+      Select |release| of the |addon|.
       This step also installs nRF Connect SDK v\ |ncs_version|.
 
    .. group-tab:: Command line
 
-      You can initialize the workspace in two alternative ways:
+      You can initialize the workspace in two alternative ways.
+      In the following commands, replace *version* with the tag of the |addon| release you want to use, or with ``main`` to use the latest development state.
 
       **Initialize a new workspace:**
 
-      1. In the `Get the nRF Connect SDK code <Installing the nRF Connect SDK_>`_, run the following command to initialize west with the |addon|, which also initializes nRF Connect SDK v\ |ncs_version|:
+      1. In the `Get the nRF Connect SDK code <Installing the nRF Connect SDK_>`_, run the following command to initialize west with the |addon|, which also initializes the compatible version of the nRF Connect SDK:
 
          a. Initialize ``ncs`` for the |addon|:
 
-            .. code-block:: console
+            .. parsed-literal::
+               :class: highlight
 
-               west init -m "https://github.com/nrfconnect/ncs-knx-iot"
+               west init -m "https\://github.com/nrfconnect/ncs-knx-iot" --mr *version*
+
+            For example:
+
+            .. parsed-literal::
+               :class: highlight
+
+               west init -m "https\://github.com/nrfconnect/ncs-knx-iot" --mr |release|
 
          #. Update the nRF Connect SDK modules:
 
@@ -59,9 +68,17 @@ Follow the `Installing the nRF Connect SDK`_ instructions, with the following ex
 
          #. Clone the |addon| repository:
 
-            .. code-block:: console
+            .. parsed-literal::
+               :class: highlight
 
-               git clone https://github.com/nrfconnect/ncs-knx-iot
+               git clone --branch *version* https\://github.com/nrfconnect/ncs-knx-iot
+
+            For example:
+
+            .. parsed-literal::
+               :class: highlight
+
+               git clone --branch |release| https\://github.com/nrfconnect/ncs-knx-iot
 
          #. Set manifest path to the |addon| directory:
 

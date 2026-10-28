@@ -3,6 +3,7 @@
 .. |ncs_version| replace:: 3.4.1
 .. |knx-iot_version| replace:: 1.1.0
 .. |addon_version| replace:: 0.7.0
+.. |release| replace:: v0.7.0
 
 .. |NCS| replace:: nRF Connect SDK
 .. |addon| replace:: KNX IoT add-on
