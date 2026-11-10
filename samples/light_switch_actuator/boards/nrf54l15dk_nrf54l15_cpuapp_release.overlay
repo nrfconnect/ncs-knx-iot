@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
  */
 
+#include <knx_iot/nrf54l15_cpuapp_partitions.dtsi>
+
 /* Disable unused peripherals */
 &spi00 {
 	status = "disabled";

@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
  */
 
+#include <knx_iot/nrf54l15_cpuapp_partitions.dtsi>
+
 /* The release image uses internal RRAM for firmware and persistent settings. */
 &spi00 {
 	status = "disabled";
