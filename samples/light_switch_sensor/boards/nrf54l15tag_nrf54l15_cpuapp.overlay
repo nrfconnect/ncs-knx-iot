@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
  */
 
+#include <knx_iot/nrf54l15_cpuapp_partitions.dtsi>
+
 / {
 	aliases {
 		knx-ui-rgb-led = &rgb_led_1;

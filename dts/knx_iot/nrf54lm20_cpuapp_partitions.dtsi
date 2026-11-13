@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: LicenseRef-Nordic-5-Clause
+ */
+
+/*
+ * KNX IoT sample partition layout: MCUboot (overwrite-only with compressed
+ * update images), primary and secondary application slots in internal RRAM,
+ * factory data and settings storage.
+ *
+ * The secondary slot is sized for an LZMA2-compressed image, assuming roughly
+ * 65% compression ratio relative to the primary slot.
+ */
+
+/delete-node/ &boot_partition;
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+/delete-node/ &storage_partition;
+
+&cpuapp_rram {
+	partitions {
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+		};
+
+		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x0000c000 DT_SIZE_K(1180)>;
+		};
+
+		slot1_partition: partition@133000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x00133000 DT_SIZE_K(768)>;
+		};
+
+		factory_data_partition: partition@1f3000 {
+			compatible = "zephyr,mapped-partition";
+			label = "factory-data";
+			reg = <0x001f3000 DT_SIZE_K(4)>;
+		};
+
+		storage_partition: partition@1f4000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x001f4000 DT_SIZE_K(36)>;
+		};
+	};
+};
