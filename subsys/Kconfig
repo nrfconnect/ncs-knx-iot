@@ -172,6 +172,38 @@ config KNX_VERBOSE_STACK_LOGS
 	  When enabled, libknx logs at DEBUG level and stack PRINT output is
 	  routed to Zephyr logging.
 
+config KNX_SWU
+	bool "KNX IoT software update"
+	default y
+	depends on BOOTLOADER_MCUBOOT
+	depends on MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE || \
+		   MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH || \
+		   MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH || \
+		   MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY
+	select FLASH
+	select FLASH_MAP
+	select STREAM_FLASH
+	select IMG_MANAGER
+	select DFU_TARGET
+	select DFU_TARGET_MCUBOOT
+	select REBOOT
+	help
+	  Accept signed MCUboot images pushed through the KNX IoT swu
+	  functional block. The image is written to the secondary slot through
+	  the DFU target library. An update request swaps the image in test mode,
+	  and the new image is confirmed after the KNX stack starts on the next
+	  boot. The firmware version reported by the device is the version of
+	  the running MCUboot image.
+
+config KNX_SWU_WRITE_BUFFER_SIZE
+	int "Software update write buffer size"
+	default 512
+	depends on KNX_SWU
+	help
+	  Size in bytes of the buffer that collects received image data before
+	  it is written to the secondary slot. Must be a multiple of the flash
+	  write block size.
+
 rsource "ui/Kconfig"
 
 endif # KNX_IOT_ADD_ON

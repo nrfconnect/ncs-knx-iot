@@ -22,6 +22,12 @@ tests:
   samples.knx_iot.certification.thread_otshell:
     extra_args:
       - EXTRA_CONF_FILE=../common/overlay-thread-otshell.conf
+  # MCUboot and KNX IoT software update. The nRF54LC10 slots are too small.
+  samples.knx_iot.certification.swu:
+    extra_args:
+      - SB_EXTRA_CONF_FILE=../common/sysbuild-swu.conf
+    platform_exclude:
+      - nrf54lc10dk/nrf54lc10a/cpuapp
   samples.knx_iot.certification.verbose_logging:
     required_snippets:
       - knx-verbose-logging

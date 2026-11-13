@@ -320,7 +320,7 @@ void knx_get_dp(oc_request_t *request, oc_interface_mask_t interfaces, void *use
 	oc_rep_begin_root_object();
 
 	if (oc_query_value_exists(request, "m") != -1) {
-		char *m_value = NULL;
+		const char *m_value = NULL;
 		int m_value_len = -1;
 		bool more_query_params;
 

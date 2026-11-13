@@ -12,12 +12,10 @@ set(KNX_IOT_SPAKE_RECORD_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/knx_spake_record.c"
 add_custom_command(
   OUTPUT ${KNX_IOT_SPAKE_RECORD_SOURCE}
   COMMAND ${Python3_EXECUTABLE} ${KNX_IOT_SPAKE_RECORD_GENERATOR}
-          --stack-generator ${KNX_IOT_STACK_SPAKE_RECORD_GENERATOR}
           --password "${CONFIG_KNX_IOT_PASSWORD}"
           --symbol knx_dev_spake_record
           --output ${KNX_IOT_SPAKE_RECORD_SOURCE}
   DEPENDS ${KNX_IOT_SPAKE_RECORD_GENERATOR}
-          ${KNX_IOT_STACK_SPAKE_RECORD_GENERATOR}
   COMMENT "Generating the KNX IoT SPAKE2+ verifier record"
   VERBATIM
 )
@@ -29,6 +27,9 @@ zephyr_library_sources(knx_resources.c)
 zephyr_library_sources(knx_transport.c)
 zephyr_library_sources(${KNX_IOT_SPAKE_RECORD_SOURCE})
 zephyr_library_sources_ifdef(CONFIG_KNXIOT_CLIENT knx_init_read.c)
+
+# KNX IoT software update on top of MCUboot.
+zephyr_library_sources_ifdef(CONFIG_KNX_SWU knx_swu.c)
 
 # Hardcoded KNX commissioning for development.
 zephyr_library_sources_ifdef(CONFIG_KNX_HARDCODED_COMMISSIONING knx_presets.c)

@@ -415,7 +415,7 @@ static void knx_on_network_ready(const knx_device_t *dev)
 
 	(void)oc_connectivity_get_endpoints();
 	LOG_INF("Thread network attached");
-	if (knx_dns_sd_update_service(device->serialnumber, device->iid, device->ia, device->pm) < 0) {
+	if (knx_dns_sd_update_service(device) < 0) {
 		LOG_ERR("Failed to publish KNX service");
 	} else {
 		LOG_INF("KNX service published");

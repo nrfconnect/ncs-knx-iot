@@ -37,6 +37,12 @@ tests:
   samples.knx_iot.light_switch_sensor.hardcoded:
     extra_args:
       - EXTRA_CONF_FILE=../common/overlay-knx-hardcoded.conf;../common/overlay-thread-hardcoded.conf
+  # MCUboot and KNX IoT software update. The nRF54LC10 slots are too small.
+  samples.knx_iot.light_switch_sensor.swu:
+    extra_args:
+      - SB_EXTRA_CONF_FILE=../common/sysbuild-swu.conf
+    platform_exclude:
+      - nrf54lc10dk/nrf54lc10a/cpuapp
   samples.knx_iot.light_switch_sensor.verbose_logging:
     required_snippets:
       - knx-verbose-logging
