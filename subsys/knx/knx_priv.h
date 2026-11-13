@@ -61,8 +61,9 @@ int knx_identity_hwinfo_init(const char *base_serial_number);
 const char *knx_identity_hwinfo_serial_number(void);
 int32_t knx_identity_hwinfo_ia(void);
 
-/* Helper required by compiled libknx sources (port/zephyr/knx_shell.c). */
+/* Helpers required by compiled libknx sources (port/knx_shell_commands.c). */
 const char *app_get_password(void);
+const char *knx_iot_get_application_name(void);
 
 /* Shared CBOR helper used by the datapoint GET handler. */
 void add_all_interface_short_urns_for_a_resource(const oc_resource_t *resource);

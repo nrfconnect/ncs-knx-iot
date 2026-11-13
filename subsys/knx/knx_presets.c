@@ -229,7 +229,7 @@ static int setup_hardcoded_access_token(const knx_preset_t *preset)
 {
 	oc_auth_at_t *at = find_empty_at_entry();
 	const char *serial_number = oc_core_get_device_info()->serialnumber;
-	uint8_t context_id[SERIAL_NUM_SIZE / 2];
+	uint8_t context_id[SN_STR_LEN_MAX / 2];
 	uint16_t ga_len;
 
 	if (at == NULL) {

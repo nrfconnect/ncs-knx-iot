@@ -22,6 +22,7 @@
 #include "oc_core_res.h"
 #include "oc_endpoint.h"
 #include "oc_knx.h"
+#include "oc_knx_swu.h"
 #include "port/oc_storage.h"
 
 LOG_MODULE_REGISTER(knx_stack, LOG_LEVEL_INF);
@@ -31,6 +32,11 @@ extern const oc_spake_record_t knx_dev_spake_record;
 const char *app_get_password(void)
 {
 	return CONFIG_KNX_IOT_PASSWORD;
+}
+
+const char *knx_iot_get_application_name(void)
+{
+	return knx_device_get()->identity->application_name;
 }
 
 const oc_spake_record_t *app_get_precalculated_spake_data(void)
@@ -77,14 +83,35 @@ static void reset_cb(int reset_value, void *data)
 #endif
 }
 
-static void hostname_cb(const oc_string_t host_name, void *data)
+/* KNX IoT software update is not supported: reject every block and trigger. */
+static void swu_reject(void)
 {
-	(void)data;
-
-	LOG_DBG("host name: %s", oc_string(host_name));
+	oc_swu_set_result(OC_SWU_RESULT_ERR_SUF);
+	oc_swu_set_state(OC_SWU_STATE_IDLE);
 }
 
-BUILD_ASSERT(sizeof(CONFIG_KNX_SERIAL_NUMBER) == SERIAL_NUM_SIZE + 1,
+static void swu_cb(oc_separate_response_t *response, size_t binary_size, size_t block_offset,
+		   const uint8_t *block_data, size_t block_len, void *data)
+{
+	ARG_UNUSED(response);
+	ARG_UNUSED(binary_size);
+	ARG_UNUSED(block_offset);
+	ARG_UNUSED(block_data);
+	ARG_UNUSED(block_len);
+	ARG_UNUSED(data);
+
+	swu_reject();
+}
+
+static void swu_upgrade_cb(int defer_time, void *data)
+{
+	ARG_UNUSED(defer_time);
+	ARG_UNUSED(data);
+
+	swu_reject();
+}
+
+BUILD_ASSERT(sizeof(CONFIG_KNX_SERIAL_NUMBER) == SN_STR_LEN_MAX + 1,
 	     "CONFIG_KNX_SERIAL_NUMBER must have 12 characters");
 
 static int knx_stack_init_device(void)
@@ -92,7 +119,8 @@ static int knx_stack_init_device(void)
 	const knx_identity_t *id = knx_device_get()->identity;
 	const char *serial_number = id->serialnumber;
 
-	oc_knx_version_info_t hw_version = {.major = 0, .minor = 0, .patch = 1};
+	/* The stack keeps the hardware version pointer. */
+	static const oc_knx_version_info_t hw_version = {.major = 0, .minor = 0, .patch = 1};
 	oc_knx_version_info_t fw_version = {.major = 0, .minor = 0, .patch = 1};
 	oc_knx_version_info_t app_version = {.major = 1, .minor = 0, .patch = 0};
 
@@ -119,10 +147,6 @@ static int knx_stack_init_device(void)
 
 	oc_core_set_and_store_device_application_version(&app_version);
 
-	char hname[HNAME_SIZE];
-	(void)snprintf(hname, HNAME_SIZE, HNAME_TYPE, serial_number);
-	oc_core_set_device_hostname(hname);
-
 	return 0;
 }
 
@@ -137,10 +161,11 @@ int knx_stack_init(const char *storage_folder_name)
 				       .register_resources = register_resources,
 				       .requests_entry = NULL};
 
-	oc_set_hostname_cb(hostname_cb, NULL);
 	oc_set_factory_presets_cb(factory_presets_cb, NULL);
 	oc_set_restart_cb(restart_presets_cb, NULL);
 	oc_set_reset_cb(reset_cb, NULL);
+	oc_set_swu_cb(swu_cb, NULL);
+	oc_set_swu_upgrade_cb(swu_upgrade_cb, NULL);
 
 	return oc_main_init(&handler);
 }

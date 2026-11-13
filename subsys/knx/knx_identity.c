@@ -31,10 +31,10 @@ LOG_MODULE_REGISTER(knx_identity, LOG_LEVEL_INF);
 #define IA_LINES   16U
 #define IA_DEVICES 254U
 
-BUILD_ASSERT(SERIAL_NUM_SIZE == MID_CHARS + 2 * sizeof(uint32_t),
+BUILD_ASSERT(SN_STR_LEN_MAX == MID_CHARS + 2 * sizeof(uint32_t),
 	     "the serial number must hold the manufacturer ID and 32 bits of device ID");
 
-static char serial_number[SERIAL_NUM_SIZE + 1];
+static char serial_number[SN_STR_LEN_MAX + 1];
 static uint32_t device_bits;
 
 int knx_identity_hwinfo_init(const char *base_serial_number)
