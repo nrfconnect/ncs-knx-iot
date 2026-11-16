@@ -14,11 +14,17 @@ on:
     branches:
       - main
 
+env:
+  # Platform built first for quick feedback
+  SMOKE_PLATFORM: nrf54lc10dk/nrf54lc10a/cpuapp
+
 permissions:
   contents: read
 
 jobs:
-  Build-samples:
+  # Quick check on the smoke platform only
+  Build-samples-smoke:
+    name: Build samples (smoke platform)
     runs-on: ubuntu-24.04
     container: ghcr.io/nrfconnect/sdk-nrf-toolchain:v3.4.1
     defaults:
@@ -26,7 +32,7 @@ jobs:
         # Bash shell is needed to set toolchain related environment variables in docker container
         # It is a workaround for GitHub Actions limitation https://github.com/actions/runner/issues/1964
         shell: bash
-    steps: 
+    steps:
     - name: Checkout repository code
       uses: actions/checkout@1e31de5234b9f8995739874a8ce0492dc87873e2 # v4
       with:
@@ -41,7 +47,40 @@ jobs:
     - name: Twister build samples
       run: |
         source zephyr/zephyr-env.sh
-        zephyr/scripts/twister --inline-logs --build-only -N --verbose -T knx-iot/samples --all
+        zephyr/scripts/twister --inline-logs --build-only -N --verbose -T knx-iot/samples --platform ${{ env.SMOKE_PLATFORM }}
+    - name: Store hex files
+      uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4
+      with:
+        name: hexes-smoke
+        path: twister-out/**/*.hex
+
+  # Remaining platforms, after the quick check passes
+  Build-samples:
+    name: Build samples (remaining platforms)
+    runs-on: ubuntu-24.04
+    needs: Build-samples-smoke
+    container: ghcr.io/nrfconnect/sdk-nrf-toolchain:v3.4.1
+    defaults:
+      run:
+        # Bash shell is needed to set toolchain related environment variables in docker container
+        # It is a workaround for GitHub Actions limitation https://github.com/actions/runner/issues/1964
+        shell: bash
+    steps:
+    - name: Checkout repository code
+      uses: actions/checkout@1e31de5234b9f8995739874a8ce0492dc87873e2 # v4
+      with:
+        fetch-depth: 0
+        path: knx-iot
+    - name: prepare west project
+      run: |
+        rm -rf .west
+        west --version
+        west init -l knx-iot --mf west.yml &&
+        west update -n -o=--depth=1 --path-cache /workdir/
+    - name: Twister build samples
+      run: |
+        source zephyr/zephyr-env.sh
+        zephyr/scripts/twister --inline-logs --build-only -N --verbose -T knx-iot/samples --all --exclude-platform ${{ env.SMOKE_PLATFORM }}
     - name: Store hex files
       uses: actions/upload-artifact@c7d193f32edcb7bfad88892161225aeda64e9392 # v4
       with:
