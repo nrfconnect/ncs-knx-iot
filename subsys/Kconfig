@@ -20,9 +20,6 @@ menuconfig KNX_IOT_ADD_ON
 	select PSA_WANT_ALG_HMAC
 	select PSA_WANT_ALG_HKDF
 	select PSA_WANT_ALG_PBKDF2_HMAC
-	# tinycbor headers pull in NETWORKING even though we don't use the IP stack as an L2.
-	imply NETWORKING
-	imply POSIX_API
 	imply CPP
 	imply FLASH
 	imply FLASH_MAP
