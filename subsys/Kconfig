@@ -132,6 +132,19 @@ config KNX_THREAD_STACK_SIZE
 	  (oc_main_poll). The loop reaches into the stack's CoAP and OSCORE
 	  paths, whose buffers dominate the requirement.
 
+config KNX_MTU_SIZE
+	int "KNX IoT CoAP MTU size (bytes)"
+	default 1232 if OPENTHREAD
+	default 2048
+	range 1213 2048
+	help
+	  Maximum size of a CoAP message. It sets the size of the message
+	  buffers. With Thread, the default is the largest UDP payload that
+	  fits in a Thread IPv6 packet. Otherwise, it is the stack default of
+	  2048 bytes. The minimum of 1213 bytes keeps 1024-byte block-wise
+	  transfer blocks and leaves room for OSCORE protection of a full
+	  block, as the stack does not handle smaller blocks safely.
+
 config KNX_THREAD_FACTORY_RESET_SRP_TIMEOUT_SECONDS
 	int "SRP removal timeout before Thread factory reset (seconds)"
 	default 3

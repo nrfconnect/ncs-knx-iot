@@ -19,6 +19,9 @@
 #include <zephyr/logging/log.h>
 
 #include "oc_api.h"
+#include "oc_buffer_settings.h"
+#include "conf.h"
+#include "oscore_constants.h"
 #include "oc_core_res.h"
 #include "oc_endpoint.h"
 #include "oc_knx.h"
@@ -141,6 +144,22 @@ int knx_stack_init(const char *storage_folder_name)
 	oc_set_factory_presets_cb(factory_presets_cb, NULL);
 	oc_set_restart_cb(restart_presets_cb, NULL);
 	oc_set_reset_cb(reset_cb, NULL);
+
+	/* Must precede oc_main_init(), which allocates the first message buffers. */
+	if (oc_set_mtu_size(CONFIG_KNX_MTU_SIZE) < 0) {
+		LOG_ERR("Invalid MTU size %d", CONFIG_KNX_MTU_SIZE);
+		return -EINVAL;
+	}
+
+	/* OSCORE protection moves a full block to offset 2 * COAP_MAX_HEADER_SIZE
+	 * of the message buffer and appends the authentication tag after it.
+	 */
+	if (oc_get_mtu_size() <
+	    2 * COAP_MAX_HEADER_SIZE + oc_get_block_size() + OSCORE_AEAD_TAG_LEN) {
+		LOG_ERR("MTU size %d leaves no room for OSCORE in a %u-byte block",
+			CONFIG_KNX_MTU_SIZE, oc_get_block_size());
+		return -EINVAL;
+	}
 
 	return oc_main_init(&handler);
 }
