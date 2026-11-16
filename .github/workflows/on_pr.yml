@@ -18,6 +18,10 @@ env:
   # Platform built first for quick feedback
   SMOKE_PLATFORM: nrf54lc10dk/nrf54lc10a/cpuapp
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
