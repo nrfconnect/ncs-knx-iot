@@ -169,6 +169,52 @@ config KNX_VERBOSE_STACK_LOGS
 	  When enabled, libknx logs at DEBUG level and stack PRINT output is
 	  routed to Zephyr logging.
 
+config KNX_SWU
+	bool "KNX IoT software update"
+	default y
+	depends on BOOTLOADER_MCUBOOT
+	depends on MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE || \
+		   MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH || \
+		   MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH || \
+		   MCUBOOT_BOOTLOADER_MODE_OVERWRITE_ONLY
+	select FLASH
+	select FLASH_MAP
+	select STREAM_FLASH
+	select IMG_MANAGER
+	select DFU_TARGET
+	select DFU_TARGET_MCUBOOT
+	select REBOOT
+	help
+	  Accept signed MCUboot images pushed through the KNX IoT swu
+	  functional block. The image is written to the secondary slot through
+	  the DFU target library. An update request reboots the device, and
+	  MCUboot verifies and installs the image. In the swap modes the image
+	  runs in test mode and is confirmed after the KNX stack starts on the
+	  next boot. In overwrite-only mode the previous image is replaced and
+	  cannot be restored. The firmware version reported by the device is the
+	  version of the running MCUboot image.
+
+config KNX_SWU_WRITE_BUFFER_SIZE
+	int "Software update write buffer size"
+	default 512
+	depends on KNX_SWU
+	help
+	  Size in bytes of the buffer that collects received image data before
+	  it is written to the secondary slot. Must be a multiple of the flash
+	  write block size.
+
+config KNX_SWU_APPLY_MIN_DELAY
+	int "Minimum delay before applying a software update [s]"
+	default 2
+	range 0 65535
+	depends on KNX_SWU
+	help
+	  Minimum time in seconds between a swu/update request and the reboot
+	  that applies the update. A shorter defer time requested by the
+	  management client is raised to this value, so that the swu/update
+	  response is sent before the device reboots. With 0, the device may
+	  reboot before the response is sent.
+
 rsource "ui/Kconfig"
 
 endif # KNX_IOT_ADD_ON

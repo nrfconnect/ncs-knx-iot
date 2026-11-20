@@ -128,6 +128,7 @@ typedef struct {
 	const char *hw_type;	      /* hardware type bytes as a string */
 	const char *dev_model;	      /* device model */
 	uint32_t mid;		      /* manufacturer id */
+	const char *hw_ref;	      /* swu/hwref, 16 upper-case hex characters, or NULL */
 } knx_identity_t;
 
 /* Invoked on the KNX thread after a PUT or a KNX factory reset updated a

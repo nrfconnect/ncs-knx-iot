@@ -65,6 +65,7 @@ static const knx_identity_t actuator_identity = {
 	.hw_type = "000102030405",
 	.dev_model = "6800",
 	.mid = 0x00fa,
+	.hw_ref = "00FA000102030405",
 };
 
 /* Application parameter required by the KNX virtual LSxB reference ETS product. */

@@ -16,6 +16,7 @@
 
 #include "knx_priv.h"
 
+#include <zephyr/app_version.h>
 #include <zephyr/logging/log.h>
 
 #include "oc_api.h"
@@ -83,6 +84,7 @@ static void reset_cb(int reset_value, void *data)
 #endif
 }
 
+#if !defined(CONFIG_KNX_SWU)
 /* KNX IoT software update is not supported: reject every block and trigger. */
 static void swu_reject(void)
 {
@@ -110,6 +112,7 @@ static void swu_upgrade_cb(int defer_time, void *data)
 
 	swu_reject();
 }
+#endif /* !CONFIG_KNX_SWU */
 
 BUILD_ASSERT(sizeof(CONFIG_KNX_SERIAL_NUMBER) == SN_STR_LEN_MAX + 1,
 	     "CONFIG_KNX_SERIAL_NUMBER must have 12 characters");
@@ -121,7 +124,11 @@ static int knx_stack_init_device(void)
 
 	/* The stack keeps the hardware version pointer. */
 	static const oc_knx_version_info_t hw_version = {.major = 0, .minor = 0, .patch = 1};
-	oc_knx_version_info_t fw_version = {.major = 0, .minor = 0, .patch = 1};
+	oc_knx_version_info_t fw_version = {
+		.major = APP_VERSION_MAJOR,
+		.minor = APP_VERSION_MINOR,
+		.patch = APP_PATCHLEVEL,
+	};
 	oc_knx_version_info_t app_version = {.major = 1, .minor = 0, .patch = 0};
 
 #if defined(CONFIG_KNX_HARDCODED_IDENTITY_HWINFO)
@@ -134,10 +141,17 @@ static int knx_stack_init_device(void)
 	serial_number = knx_identity_hwinfo_serial_number();
 #endif
 
+#if defined(CONFIG_KNX_SWU)
+	knx_swu_running_version(&fw_version);
+#endif
+
 	/* Permanent identity. */
 	oc_core_set_device_sn(serial_number);
 	oc_core_set_device_hwv(&hw_version);
 	oc_core_set_and_store_device_fwv(&fw_version);
+	if (id->hw_ref != NULL) {
+		oc_swu_set_hwref(id->hw_ref);
+	}
 
 	oc_core_set_device_res();
 
@@ -164,8 +178,20 @@ int knx_stack_init(const char *storage_folder_name)
 	oc_set_factory_presets_cb(factory_presets_cb, NULL);
 	oc_set_restart_cb(restart_presets_cb, NULL);
 	oc_set_reset_cb(reset_cb, NULL);
+#if defined(CONFIG_KNX_SWU)
+	knx_swu_register();
+#else
 	oc_set_swu_cb(swu_cb, NULL);
 	oc_set_swu_upgrade_cb(swu_upgrade_cb, NULL);
+#endif
 
-	return oc_main_init(&handler);
+	int ret = oc_main_init(&handler);
+
+#if defined(CONFIG_KNX_SWU)
+	if (ret >= 0) {
+		knx_swu_boot_complete();
+	}
+#endif
+
+	return ret;
 }

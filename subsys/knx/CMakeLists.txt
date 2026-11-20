@@ -28,6 +28,9 @@ zephyr_library_sources(knx_transport.c)
 zephyr_library_sources(${KNX_IOT_SPAKE_RECORD_SOURCE})
 zephyr_library_sources_ifdef(CONFIG_KNXIOT_CLIENT knx_init_read.c)
 
+# KNX IoT software update on top of MCUboot.
+zephyr_library_sources_ifdef(CONFIG_KNX_SWU knx_swu.c)
+
 # Hardcoded KNX commissioning for development.
 zephyr_library_sources_ifdef(CONFIG_KNX_HARDCODED_COMMISSIONING knx_presets.c)
 zephyr_library_sources_ifdef(CONFIG_KNX_HARDCODED_IDENTITY_HWINFO knx_identity.c)

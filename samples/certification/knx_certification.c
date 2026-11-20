@@ -48,6 +48,7 @@ static const knx_identity_t certification_identity = {
 	.hw_type = "Windows",
 	.dev_model = "KNX Certification",
 	.mid = 667,
+	.hw_ref = "029B000000000000",
 };
 
 /* Global test parameter of the EITT test template.

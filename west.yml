@@ -17,7 +17,7 @@ manifest:
       import: true
 
     - name: sdk-knx-iot-stack
-      revision: 8311140b6a279364970eb4d89b0dd2a376891222
+      revision: 04145969c37e4267cd3d6943939ca8812d412e21
       remote: ncs
       repo-path: sdk-knx-iot-point-api-stack
       path: modules/lib/sdk-knx-iot-stack

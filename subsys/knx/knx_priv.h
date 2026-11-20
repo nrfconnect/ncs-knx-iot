@@ -15,6 +15,7 @@
 #include <knx/knx_device.h>
 
 #include "oc_api.h"
+#include "oc_core_res.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -60,6 +61,16 @@ void knx_init_read_finish(knx_datapoint_t *dp, bool received);
 int knx_identity_hwinfo_init(const char *base_serial_number);
 const char *knx_identity_hwinfo_serial_number(void);
 int32_t knx_identity_hwinfo_ia(void);
+
+/* MCUboot-based software update (knx_swu.c).
+ * Register installs the a/swu and swu/update callbacks before oc_main_init().
+ * Running version overwrites version with the version of the running image if
+ * its header is readable. Boot complete runs after oc_main_init() succeeded: it
+ * confirms the running image and reports the result of a requested update.
+ */
+void knx_swu_register(void);
+void knx_swu_running_version(oc_knx_version_info_t *version);
+void knx_swu_boot_complete(void);
 
 /* Helpers required by compiled libknx sources (port/knx_shell_commands.c). */
 const char *app_get_password(void);
