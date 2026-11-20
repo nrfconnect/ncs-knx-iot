@@ -33,6 +33,10 @@
 #include <dfu/dfu_target.h>
 #include <dfu/dfu_target_mcuboot.h>
 
+#if defined(CONFIG_MCUBOOT_BOOTUTIL_LIB)
+#include <bootutil/image.h>
+#endif
+
 #include "knx_priv.h"
 
 #include "oc_api.h"
@@ -182,6 +186,20 @@ static bool download_start(const struct swu_image *image, size_t size, const uin
 	}
 
 	download.active = true;
+
+#if defined(CONFIG_MCUBOOT_BOOTUTIL_LIB)
+	/* The version is not verified until MCUboot checks the image signature. */
+	struct image_header hdr;
+
+	if (block_len >= sizeof(hdr)) {
+		memcpy(&hdr, block, sizeof(hdr));
+		LOG_INF("Download started, image version %u.%u.%u+%u, package size %zu",
+			hdr.ih_ver.iv_major, hdr.ih_ver.iv_minor, hdr.ih_ver.iv_revision,
+			hdr.ih_ver.iv_build_num, size);
+		return true;
+	}
+#endif
+
 	LOG_INF("Download started, package size %zu", size);
 	return true;
 }

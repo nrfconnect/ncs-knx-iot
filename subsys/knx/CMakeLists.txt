@@ -29,7 +29,11 @@ zephyr_library_sources(${KNX_IOT_SPAKE_RECORD_SOURCE})
 zephyr_library_sources_ifdef(CONFIG_KNXIOT_CLIENT knx_init_read.c)
 
 # KNX IoT software update on top of MCUboot.
-zephyr_library_sources_ifdef(CONFIG_KNX_SWU knx_swu.c)
+if(CONFIG_KNX_SWU)
+  zephyr_library_sources(knx_swu.c)
+  # MCUboot image header definitions, used to parse the header of a received package.
+  zephyr_library_link_libraries_ifdef(CONFIG_MCUBOOT_BOOTUTIL_LIB MCUBOOT_BOOTUTIL)
+endif()
 
 # Hardcoded KNX commissioning for development.
 zephyr_library_sources_ifdef(CONFIG_KNX_HARDCODED_COMMISSIONING knx_presets.c)
