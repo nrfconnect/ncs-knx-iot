@@ -74,9 +74,6 @@ The device uses the following identity:
 
 The device runs as a router-capable Full Thread Device (FTD) with device power management disabled, so it stays reachable during the tests.
 
-.. note::
-   The sample does not support software updates.
-
 User interface
 **************
 
