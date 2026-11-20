@@ -19,12 +19,15 @@ RAM and flash memory requirement values differ depending on the DK and the progr
 
 The following tables and bar charts list memory requirement values for KNX IoT samples.
 
-Memory layout is taken from the DTS files used by each sample variant, while memory usage is taken from the build output.
+Memory layout is taken from the partition layouts in the :file:`dts/knx_iot/` directory used by each sample variant, while memory usage is taken from the build output.
 Values are provided in kilobytes (KB).
 
-Table columns are grouped by internal NVM, external NVM (when used), and RAM.
-Application, MCUboot, upgrade slot, and RAM cells show used and free space separated by ``/``.
-Other NVM columns list the reserved partition size for that region.
+All samples use MCUboot in overwrite-only mode with LZMA2-compressed update images.
+The upgrade slot is therefore smaller than the application slot and is placed in internal non-volatile memory, so no external flash is needed.
+
+Table columns are grouped by internal NVM and RAM.
+MCUboot, application, and RAM cells show used and free space separated by ``/``.
+Other NVM columns (upgrade slot, factory data, and settings) list the reserved partition size for that region.
 
 .. tabs::
 
