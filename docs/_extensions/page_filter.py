@@ -196,11 +196,11 @@ def page_filter_install(
     doctree.walk(visitor)
     if visitor.found_filter_dropdown:
         app.add_css_file("page_filter.css")
-        app.add_js_file("page_filter.mjs", type="module")
-        script = app.builder.script_files[-1]
+        script_name = "page_filter.mjs"
+        app.add_js_file(script_name, type="module")
 
         page_depth = len(Path(pagename).parents) - 1
-        body = f"import setupFiltering from './{page_depth * '../'}{script.filename}'; "
+        body = f"import setupFiltering from './{page_depth * '../'}_static/{script_name}'; "
         for dropdown in visitor.found_filter_dropdown:
             body += f"setupFiltering('{dropdown.name}'"
             if dropdown.container_element and dropdown.filter_tags:
