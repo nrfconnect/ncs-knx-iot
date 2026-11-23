@@ -23,6 +23,7 @@
 #include "oc_core_res.h"
 #include "oc_endpoint.h"
 #include "oc_knx.h"
+#include "oc_knx_dev.h"
 #include "oc_knx_swu.h"
 #include "port/oc_storage.h"
 
@@ -71,12 +72,40 @@ static void restart_presets_cb(void *data)
 	knx_restart_handler(data);
 }
 
+/*
+ * Application program version (ap/pv): [Manufacturer ID, Device Type, Version].
+ * Zero until the MaC downloads an application program.
+ */
+static const oc_knx_version_info_t default_app_version = {.major = 0, .minor = 0, .patch = 0};
+
+static void reset_app_version(void)
+{
+	oc_knx_version_info_t version = default_app_version;
+
+	if (oc_core_set_and_store_device_application_version(&version) != 0) {
+		LOG_ERR("Cannot store the default application program version");
+	}
+}
+
+/* Keeps the version written by the MaC, stores the default only on the first boot. */
+static void init_app_version(void)
+{
+	oc_knx_version_info_t version;
+	const long len =
+		oc_storage_read(KNX_STORAGE_KEY_APP_VERSION, (uint8_t *)&version, sizeof(version));
+
+	if (len <= 0) {
+		reset_app_version();
+	}
+}
+
 static void reset_cb(int reset_value, void *data)
 {
 	(void)data;
 
 	if (reset_value == RESET_TO_DEFAULT_STATE || reset_value == RESET_TO_DEFAULT_WO_IA) {
 		knx_datapoints_factory_reset();
+		reset_app_version();
 	}
 
 #if defined(CONFIG_DK_LIBRARY)
@@ -129,7 +158,6 @@ static int knx_stack_init_device(void)
 		.minor = APP_VERSION_MINOR,
 		.patch = APP_PATCHLEVEL,
 	};
-	oc_knx_version_info_t app_version = {.major = 1, .minor = 0, .patch = 0};
 
 #if defined(CONFIG_KNX_HARDCODED_IDENTITY_HWINFO)
 	int ret = knx_identity_hwinfo_init(id->serialnumber);
@@ -159,7 +187,7 @@ static int knx_stack_init_device(void)
 	oc_core_set_device_hwt(id->hw_type);
 	oc_core_set_device_model(id->dev_model);
 
-	oc_core_set_and_store_device_application_version(&app_version);
+	init_app_version();
 
 	return 0;
 }
