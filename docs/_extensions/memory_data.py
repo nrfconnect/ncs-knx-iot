@@ -28,6 +28,8 @@ DATA_DIR = Path(__file__).parents[1] / "data" / "memory"
 INTERNAL_NVM_COLUMNS = (
     ("boot", "MCUboot (used / free)"),
     ("slot0", "Application (used / free)"),
+    ("slot1", "Upgrade slot"),
+    ("factory_data", "Factory data"),
     ("storage", "Settings"),
 )
 
@@ -348,6 +350,8 @@ def sample_table_cells(
     for part_id, _, used_free in (
         ("boot", "", True),
         ("slot0", "", True),
+        ("slot1", "", False),
+        ("factory_data", "", False),
         ("storage", "", False),
     ):
         part = parts.get(part_id)
@@ -356,7 +360,7 @@ def sample_table_cells(
             cells.append(EMPTY_CELL)
             continue
         size_kb = float(part["size_kb"]) if part is not None else None
-        if used_free and size_kb is not None:
+        if used_free and size_kb is not None and used is not None:
             cells.append(_used_free(float(used or 0), size_kb))
         elif size_kb is not None:
             cells.append(_fmt_kb(size_kb))

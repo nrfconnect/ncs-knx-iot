@@ -51,6 +51,7 @@ INTERNAL_NVM_LEGEND_ORDER = (
     "boot",
     "tfm",
     "slot0",
+    "slot1",
     "factory_data",
     "storage",
     "tfm_storage",
